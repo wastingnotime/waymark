@@ -32,7 +32,10 @@ def create_simulation() -> Scenario:
 
     def activate(context):
         payments.succeed("initial-period")
-        simulation.activate_period(context, START, end)
+        simulation.activate_period(context, START, end, "initial-period")
+
+    def duplicate_success(context):
+        simulation.activate_period(context, START, end, "initial-period")
 
     def note(context):
         simulation.record_note(context, "Notice what happened today")
@@ -76,7 +79,7 @@ def create_simulation() -> Scenario:
         simulation.expire(context)
 
     def renew(context):
-        simulation.renew_period(context, end, end + timedelta(days=7))
+        simulation.renew_period(context, end, end + timedelta(days=7), "renewal-period-2")
 
     def post_renewal_log(context):
         simulation.record_log(context, "A new paid period began", context.clock.now())
@@ -211,6 +214,12 @@ def create_simulation() -> Scenario:
             for observation in context.observations.observations
         )
 
+    def duplicate_success_is_observed(context):
+        duplicate_at = START + timedelta(minutes=2, seconds=10)
+        if context.clock.now() < duplicate_at:
+            return True
+        return any(observation.name == "duplicate_payment_success_ignored" for observation in context.observations.observations)
+
     return Scenario(
         name="waymark.subscription_backed_workspace",
         seed=20260901,
@@ -223,6 +232,7 @@ def create_simulation() -> Scenario:
             action(timedelta(minutes=1, seconds=45), "request_subscription", subscribe),
             action(timedelta(minutes=1, seconds=50), "duplicate_subscription", subscribe),
             action(timedelta(minutes=2), "activate_period", activate),
+            action(timedelta(minutes=2, seconds=10), "duplicate_payment_success", duplicate_success),
             action(timedelta(hours=1), "record_note", note),
             action(timedelta(hours=1, minutes=1), "record_retried_note", retried_note),
             action(timedelta(hours=1, minutes=2), "repeat_retried_note", retried_note),
@@ -251,6 +261,7 @@ def create_simulation() -> Scenario:
             Invariant("expired_interval_remains_closed", expired_interval_remains_closed),
             Invariant("event_replay_matches_live_state", replay_matches_live_state),
             Invariant("duplicate_failure_is_observed", duplicate_failure_is_observed),
+            Invariant("duplicate_success_is_observed", duplicate_success_is_observed),
             Invariant("log_timestamps_are_distinct", log_timestamps_are_distinct),
             Invariant("entry_ids_are_unique", entry_ids_are_unique),
             Invariant("private_workspace_is_owner_only", private_workspace_is_owner_only),

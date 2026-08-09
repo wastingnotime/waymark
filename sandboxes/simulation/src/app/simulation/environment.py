@@ -89,6 +89,10 @@ class WaymarkSimulation:
                 payment_id = event.payload.get("payment_id")
                 if payment_id:
                     simulation.state.processed_payment_ids.add(str(payment_id))
+            elif event.name == "PaymentSucceeded":
+                payment_id = event.payload.get("payment_id")
+                if payment_id:
+                    simulation.state.processed_payment_ids.add(str(payment_id))
             elif event.name in {"EntitlementRestored", "OperatorInterventionRecorded"}:
                 simulation.state.payment_failed = False
             elif event.name == "CancellationScheduled":
@@ -128,19 +132,27 @@ class WaymarkSimulation:
         self._fact("SubscriptionRequested", context.clock.now(), subscription_id=subscription_id)
         context.emit("domain_fact", "subscription_requested", source="Billing")
 
-    def activate_period(self, context: object, start: datetime, end: datetime) -> None:
+    def activate_period(self, context: object, start: datetime, end: datetime, payment_id: str | None = None) -> None:
+        if payment_id and payment_id in self.state.processed_payment_ids:
+            context.emit("payment_notice", "duplicate_payment_success_ignored", source="PaymentProvider", payload={"payment_id": payment_id})
+            return
         if self.state.subscription_id is None:
             self.request_subscription(context, "subscription-implicit")
         self.state.period_start, self.state.period_end = start, end
         self.state.payment_failed = False
         self.state.expired = False
-        self._fact("PaymentSucceeded", context.clock.now(), period_end=end)
+        if payment_id:
+            self.state.processed_payment_ids.add(payment_id)
+        self._fact("PaymentSucceeded", context.clock.now(), period_end=end, payment_id=payment_id)
         self._fact("EntitlementGranted", context.clock.now(), period_start=start, period_end=end)
         context.emit("domain_fact", "payment_succeeded", source="Billing")
         context.emit("domain_fact", "entitlement_granted", source="Access")
 
-    def renew_period(self, context: object, start: datetime, end: datetime) -> None:
+    def renew_period(self, context: object, start: datetime, end: datetime, payment_id: str | None = None) -> None:
         """Open a new paid period after expiry; never reopen the old interval."""
+        if payment_id and payment_id in self.state.processed_payment_ids:
+            context.emit("payment_notice", "duplicate_payment_success_ignored", source="PaymentProvider", payload={"payment_id": payment_id})
+            return
         if not self.state.expired:
             raise ValueError("renewal period requires an expired entitlement")
         if end <= start:
@@ -150,7 +162,9 @@ class WaymarkSimulation:
         self.state.expired = False
         self.state.cancelled = False
         self.state.cancellation_at = None
-        self._fact("PaymentSucceeded", context.clock.now(), period_start=start, period_end=end)
+        if payment_id:
+            self.state.processed_payment_ids.add(payment_id)
+        self._fact("PaymentSucceeded", context.clock.now(), period_start=start, period_end=end, payment_id=payment_id)
         self._fact("EntitlementGranted", context.clock.now(), period_start=start, period_end=end)
         context.emit("domain_fact", "payment_succeeded", source="Billing")
         context.emit("domain_fact", "new_entitlement_granted", source="Access")

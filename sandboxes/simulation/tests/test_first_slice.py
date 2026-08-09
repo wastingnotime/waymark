@@ -237,6 +237,36 @@ def test_provider_rejects_conflicting_outcomes_for_one_payment_id():
         provider.fail("payment-1")
 
 
+def test_duplicate_payment_success_does_not_append_facts():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    end = start + timedelta(days=7)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, end, "payment-1")
+    event_count = len(simulation.state.events)
+    simulation.activate_period(context, start, end, "payment-1")
+    assert len(simulation.state.events) == event_count
+    assert any(event[0][1] == "duplicate_payment_success_ignored" for event in context.events)
+
+
+def test_duplicate_renewal_success_does_not_reopen_or_duplicate_period():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    end = start + timedelta(days=7)
+    context = Context(end)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, end, "payment-1")
+    simulation.expire(context)
+    new_end = end + timedelta(days=7)
+    simulation.renew_period(context, end, new_end, "payment-2")
+    event_count = len(simulation.state.events)
+    simulation.renew_period(context, end, new_end, "payment-2")
+    assert len(simulation.state.events) == event_count
+    assert simulation.state.period_start == end
+    assert simulation.state.period_end == new_end
+
+
 def test_log_preserves_happened_at_separately_from_recorded_at():
     start = datetime(2026, 9, 1, tzinfo=timezone.utc)
     recorded = start + timedelta(days=2)

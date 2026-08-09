@@ -51,6 +51,8 @@ entitlement, access decision, and daily metric summary.
     workspace in the first version.
 21. The user requests one current subscription before payment activation; a
     duplicate same-identity request is idempotent.
+22. Successful payment notifications are idempotent by payment correlation ID,
+    just like failure notifications.
 
 ## Open questions
 
@@ -98,3 +100,6 @@ The account bootstrap slice is documented in
 
 The subscription request slice is documented in
 `docs/slices/subscription-request.md`.
+
+The payment success idempotency slice is documented in
+`docs/slices/payment-success-idempotency.md`.
