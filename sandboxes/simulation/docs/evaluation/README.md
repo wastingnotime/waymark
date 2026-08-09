@@ -18,3 +18,6 @@ mrl-simulation replay runs/waymark-first-slice.jsonl
 
 Generated JSONL evidence is intentionally not committed by default; durable
 validation receipts belong in `runs/` as Markdown summaries.
+
+The runner exits non-zero when any runtime invariant fails, so it can be used
+as a validation gate in local scripts or CI.
