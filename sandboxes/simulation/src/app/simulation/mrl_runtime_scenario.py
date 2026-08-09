@@ -117,6 +117,8 @@ def create_simulation() -> Scenario:
             and replayed.state.expired == simulation.state.expired
             and replayed.state.period_start == simulation.state.period_start
             and replayed.state.period_end == simulation.state.period_end
+            and replayed.state.cancelled == simulation.state.cancelled
+            and replayed.state.cancellation_at == simulation.state.cancellation_at
         )
 
     return Scenario(

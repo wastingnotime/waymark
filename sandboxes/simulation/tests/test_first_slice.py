@@ -208,3 +208,18 @@ def test_event_history_replays_to_the_same_state():
     assert replayed.state.entries == simulation.state.entries
     assert replayed.state.payment_failed == simulation.state.payment_failed
     assert replayed.state.period_end == simulation.state.period_end
+
+
+def test_replay_clears_old_cancellation_when_a_new_period_is_granted():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    end = start + timedelta(days=7)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, end)
+    simulation.cancel(context)
+    simulation.expire(context)
+    simulation.renew_period(context, end, end + timedelta(days=7))
+    replayed = WaymarkSimulation.replay(simulation.state.events)
+    assert not replayed.state.cancelled
+    assert replayed.state.cancellation_at is None

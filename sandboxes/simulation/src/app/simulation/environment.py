@@ -72,6 +72,8 @@ class WaymarkSimulation:
                 simulation.state.period_end = event.payload["period_end"]
                 simulation.state.expired = False
                 simulation.state.payment_failed = False
+                simulation.state.cancelled = False
+                simulation.state.cancellation_at = None
             elif event.name == "PaymentFailed":
                 simulation.state.payment_failed = True
             elif event.name in {"EntitlementRestored", "OperatorInterventionRecorded"}:
