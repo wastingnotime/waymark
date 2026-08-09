@@ -45,6 +45,8 @@ entitlement, access decision, and daily metric summary.
     state to explain the current access decision.
 18. Daily summary observations identify their calculation version; the version
     is projection metadata, not a durable business fact.
+19. Only the workspace owner may access or record entries; unauthorized actors
+    receive an explanatory rejection without domain mutation.
 
 ## Open questions
 
@@ -83,3 +85,6 @@ The operator inspection read model is documented in
 
 The summary versioning slice is documented in
 `docs/slices/summary-versioning.md`.
+
+The workspace ownership slice is documented in
+`docs/slices/workspace-ownership.md`.

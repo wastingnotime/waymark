@@ -137,11 +137,11 @@ class WaymarkSimulation:
         context.emit("domain_fact", "payment_succeeded", source="Billing")
         context.emit("domain_fact", "new_entitlement_granted", source="Access")
 
-    def record_note(self, context: object, body: str, entry_id: str | None = None) -> bool:
-        return self._record(context, "note", body, context.clock.now(), entry_id)
+    def record_note(self, context: object, body: str, entry_id: str | None = None, user_id: str | None = None) -> bool:
+        return self._record(context, "note", body, context.clock.now(), entry_id, user_id)
 
-    def record_log(self, context: object, body: str, happened_at: datetime, entry_id: str | None = None) -> bool:
-        return self._record(context, "log_entry", body, happened_at, entry_id)
+    def record_log(self, context: object, body: str, happened_at: datetime, entry_id: str | None = None, user_id: str | None = None) -> bool:
+        return self._record(context, "log_entry", body, happened_at, entry_id, user_id)
 
     def fail_payment(self, context: object, payment_id: str | None = None) -> None:
         if payment_id and payment_id in self.state.processed_payment_ids:
@@ -188,7 +188,10 @@ class WaymarkSimulation:
         context.emit("domain_fact", "entitlement_expired", source="Access")
         context.emit("access_changed", "workspace_restricted", source="Access", payload={"reason": "expired"})
 
-    def access_check(self, context: object) -> bool:
+    def access_check(self, context: object, user_id: str | None = None) -> bool:
+        if user_id is not None and user_id != self.state.user_id:
+            context.emit("access_decision", "workspace_access_checked", source="Access", payload={"allowed": False, "reason": "unauthorized_user"})
+            return False
         allowed = self.state.access_allowed(context.clock.now())
         context.emit(
             "access_decision",
@@ -263,12 +266,13 @@ class WaymarkSimulation:
         )
         return summary
 
-    def _record(self, context: object, kind: str, body: str, happened_at: datetime, entry_id: str | None) -> bool:
+    def _record(self, context: object, kind: str, body: str, happened_at: datetime, entry_id: str | None, user_id: str | None) -> bool:
         if not body.strip():
             context.emit("command_rejected", f"{kind}_rejected", source="Recording", payload={"reason": "empty_body"})
             return False
-        if not self.access_check(context):
-            context.emit("command_rejected", f"{kind}_rejected", source="Recording", payload={"reason": "restricted"})
+        if not self.access_check(context, user_id):
+            reason = "unauthorized_user" if user_id is not None and user_id != self.state.user_id else "restricted"
+            context.emit("command_rejected", f"{kind}_rejected", source="Recording", payload={"reason": reason})
             return False
         if entry_id:
             existing = next((entry for entry in self.state.entries if entry.entry_id == entry_id), None)

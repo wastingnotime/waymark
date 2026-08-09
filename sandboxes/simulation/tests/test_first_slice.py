@@ -290,6 +290,17 @@ def test_replay_advances_generated_entry_ids_without_collision():
     ]
 
 
+def test_private_workspace_rejects_another_user():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    assert not simulation.record_note(context, "private", user_id="other-user")
+    assert simulation.state.entries == []
+    assert context.events[-1][1]["payload"]["reason"] == "unauthorized_user"
+
+
 def test_replay_clears_old_cancellation_when_a_new_period_is_granted():
     start = datetime(2026, 9, 1, tzinfo=timezone.utc)
     end = start + timedelta(days=7)

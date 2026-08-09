@@ -34,6 +34,9 @@ def create_simulation() -> Scenario:
     def retried_note(context):
         simulation.record_note(context, "Retried write", "entry-retry")
 
+    def unauthorized_note(context):
+        simulation.record_note(context, "Private attempt", user_id="other-user")
+
     def fail(context):
         payments.fail("renewal-1")
         simulation.fail_payment(context, "renewal-1")
@@ -165,6 +168,16 @@ def create_simulation() -> Scenario:
         ids = [entry.entry_id for entry in simulation.state.entries]
         return len(ids) == len(set(ids))
 
+    def private_workspace_is_owner_only(context):
+        unauthorized_at = START + timedelta(hours=1, minutes=3)
+        if context.clock.now() < unauthorized_at:
+            return True
+        return any(
+            observation.type == "command_rejected"
+            and observation.payload.get("reason") == "unauthorized_user"
+            for observation in context.observations.observations
+        )
+
     def duplicate_failure_is_observed(context):
         duplicate_at = START + timedelta(days=2, seconds=30)
         if context.clock.now() < duplicate_at:
@@ -186,6 +199,7 @@ def create_simulation() -> Scenario:
             action(timedelta(hours=1), "record_note", note),
             action(timedelta(hours=1, minutes=1), "record_retried_note", retried_note),
             action(timedelta(hours=1, minutes=2), "repeat_retried_note", retried_note),
+            action(timedelta(hours=1, minutes=3), "unauthorized_note", unauthorized_note),
             action(timedelta(days=2), "payment_failure", fail),
             action(timedelta(days=2, seconds=30), "duplicate_payment_failure", duplicate_fail),
             action(timedelta(days=2, minutes=1), "restricted_write", restricted_write),
@@ -212,5 +226,6 @@ def create_simulation() -> Scenario:
             Invariant("duplicate_failure_is_observed", duplicate_failure_is_observed),
             Invariant("log_timestamps_are_distinct", log_timestamps_are_distinct),
             Invariant("entry_ids_are_unique", entry_ids_are_unique),
+            Invariant("private_workspace_is_owner_only", private_workspace_is_owner_only),
         ],
     )
