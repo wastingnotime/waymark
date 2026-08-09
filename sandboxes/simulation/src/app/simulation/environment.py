@@ -129,6 +129,8 @@ class WaymarkSimulation:
         context.emit("domain_fact", "subscription_requested", source="Billing")
 
     def activate_period(self, context: object, start: datetime, end: datetime) -> None:
+        if self.state.subscription_id is None:
+            self.request_subscription(context, "subscription-implicit")
         self.state.period_start, self.state.period_end = start, end
         self.state.payment_failed = False
         self.state.expired = False

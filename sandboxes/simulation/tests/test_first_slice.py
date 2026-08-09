@@ -88,6 +88,7 @@ def test_event_history_and_provider_outcomes_are_deterministic():
     assert [event.name for event in simulation.state.events] == [
         "AccountCreated",
         "WorkspaceCreated",
+        "SubscriptionRequested",
         "PaymentSucceeded",
         "EntitlementGranted",
     ]
@@ -105,7 +106,7 @@ def test_operator_can_inspect_and_restore_a_suspended_entitlement():
     inspection = simulation.operator_inspect(context, "support-operator")
     assert inspection["reason"] == "payment_failed"
     assert inspection["period_end"] == "2026-09-08T00:00:00+00:00"
-    assert inspection["event_count"] == 5
+    assert inspection["event_count"] == 6
     assert len(simulation.state.events) == event_count
     assert simulation.operator_restore(context, "support-operator", "verified payment manually")
     assert simulation.access_check(context)
