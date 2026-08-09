@@ -61,6 +61,17 @@ def test_cancellation_keeps_access_until_period_end():
     simulation.activate_period(context, start, end)
     simulation.cancel(context)
     assert simulation.access_check(context)
+    assert simulation.state.cancellation_at == end
+
+
+def test_entries_require_non_empty_bodies():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    assert not simulation.record_note(context, "  ")
+    assert simulation.state.entries == []
 
 
 def test_event_history_and_provider_outcomes_are_deterministic():

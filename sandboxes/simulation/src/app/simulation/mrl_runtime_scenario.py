@@ -62,6 +62,8 @@ def create_simulation() -> Scenario:
     def cancellation_boundary(context):
         if not simulation.state.cancelled:
             return True
+        if simulation.state.cancellation_at != end:
+            return False
         if simulation.state.expired:
             return not simulation.state.access_allowed(context.clock.now())
         return simulation.state.access_allowed(context.clock.now())

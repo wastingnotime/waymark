@@ -26,6 +26,7 @@ class SimState:
     payment_failed: bool = False
     expired: bool = False
     cancelled: bool = False
+    cancellation_at: datetime | None = None
     entries: list[SimEntry] = field(default_factory=list)
     events: list[SimFact] = field(default_factory=list)
 
@@ -90,9 +91,17 @@ class WaymarkSimulation:
         context.emit("access_changed", "workspace_allowed", source="Access", payload={"reason": "recovered"})
 
     def cancel(self, context: object) -> None:
+        if self.state.period_end is None:
+            raise ValueError("cannot cancel without an active paid period")
         self.state.cancelled = True
-        self._fact("CancellationScheduled", context.clock.now())
-        context.emit("domain_fact", "cancellation_scheduled", source="Billing")
+        self.state.cancellation_at = self.state.period_end
+        self._fact("CancellationScheduled", context.clock.now(), effective_at=self.state.cancellation_at)
+        context.emit(
+            "domain_fact",
+            "cancellation_scheduled",
+            source="Billing",
+            payload={"effective_at": self.state.cancellation_at.isoformat()},
+        )
 
     def expire(self, context: object) -> None:
         self.state.expired = True
@@ -127,6 +136,9 @@ class WaymarkSimulation:
         return summary
 
     def _record(self, context: object, kind: str, body: str, happened_at: datetime) -> bool:
+        if not body.strip():
+            context.emit("command_rejected", f"{kind}_rejected", source="Recording", payload={"reason": "empty_body"})
+            return False
         if not self.access_check(context):
             context.emit("command_rejected", f"{kind}_rejected", source="Recording", payload={"reason": "restricted"})
             return False
