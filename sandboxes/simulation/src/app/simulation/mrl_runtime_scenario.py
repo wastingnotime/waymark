@@ -31,6 +31,9 @@ def create_simulation() -> Scenario:
     def note(context):
         simulation.record_note(context, "Notice what happened today")
 
+    def retried_note(context):
+        simulation.record_note(context, "Retried write", "entry-retry")
+
     def fail(context):
         payments.fail("renewal-1")
         simulation.fail_payment(context, "renewal-1")
@@ -134,6 +137,10 @@ def create_simulation() -> Scenario:
             for log in logs
         )
 
+    def entry_ids_are_unique(context):
+        ids = [entry.entry_id for entry in simulation.state.entries]
+        return len(ids) == len(set(ids))
+
     def duplicate_failure_is_observed(context):
         duplicate_at = START + timedelta(days=2, seconds=30)
         if context.clock.now() < duplicate_at:
@@ -153,6 +160,8 @@ def create_simulation() -> Scenario:
             action(timedelta(minutes=1), "create_account", create),
             action(timedelta(minutes=2), "activate_period", activate),
             action(timedelta(hours=1), "record_note", note),
+            action(timedelta(hours=1, minutes=1), "record_retried_note", retried_note),
+            action(timedelta(hours=1, minutes=2), "repeat_retried_note", retried_note),
             action(timedelta(days=2), "payment_failure", fail),
             action(timedelta(days=2, seconds=30), "duplicate_payment_failure", duplicate_fail),
             action(timedelta(days=2, minutes=1), "restricted_write", restricted_write),
@@ -176,5 +185,6 @@ def create_simulation() -> Scenario:
             Invariant("event_replay_matches_live_state", replay_matches_live_state),
             Invariant("duplicate_failure_is_observed", duplicate_failure_is_observed),
             Invariant("log_timestamps_are_distinct", log_timestamps_are_distinct),
+            Invariant("entry_ids_are_unique", entry_ids_are_unique),
         ],
     )

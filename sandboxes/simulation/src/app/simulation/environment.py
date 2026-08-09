@@ -12,6 +12,7 @@ from app.simulation.ports import DeterministicIds
 
 @dataclass(frozen=True)
 class SimEntry:
+    entry_id: str
     kind: str
     body: str
     happened_at: datetime
@@ -90,6 +91,7 @@ class WaymarkSimulation:
             elif event.name in {"NoteRecorded", "LogEntryRecorded"}:
                 simulation.state.entries.append(
                     SimEntry(
+                        str(event.payload["entry_id"]),
                         str(event.payload["kind"]),
                         str(event.payload["body"]),
                         event.payload["happened_at"],
@@ -129,11 +131,11 @@ class WaymarkSimulation:
         context.emit("domain_fact", "payment_succeeded", source="Billing")
         context.emit("domain_fact", "new_entitlement_granted", source="Access")
 
-    def record_note(self, context: object, body: str) -> bool:
-        return self._record(context, "note", body, context.clock.now())
+    def record_note(self, context: object, body: str, entry_id: str | None = None) -> bool:
+        return self._record(context, "note", body, context.clock.now(), entry_id)
 
-    def record_log(self, context: object, body: str, happened_at: datetime) -> bool:
-        return self._record(context, "log_entry", body, happened_at)
+    def record_log(self, context: object, body: str, happened_at: datetime, entry_id: str | None = None) -> bool:
+        return self._record(context, "log_entry", body, happened_at, entry_id)
 
     def fail_payment(self, context: object, payment_id: str | None = None) -> None:
         if payment_id and payment_id in self.state.processed_payment_ids:
@@ -247,21 +249,28 @@ class WaymarkSimulation:
         )
         return summary
 
-    def _record(self, context: object, kind: str, body: str, happened_at: datetime) -> bool:
+    def _record(self, context: object, kind: str, body: str, happened_at: datetime, entry_id: str | None) -> bool:
         if not body.strip():
             context.emit("command_rejected", f"{kind}_rejected", source="Recording", payload={"reason": "empty_body"})
             return False
         if not self.access_check(context):
             context.emit("command_rejected", f"{kind}_rejected", source="Recording", payload={"reason": "restricted"})
             return False
-        self.state.entries.append(SimEntry(kind, body, happened_at, context.clock.now()))
+        if entry_id:
+            existing = next((entry for entry in self.state.entries if entry.entry_id == entry_id), None)
+            if existing:
+                return existing.kind == kind and existing.body == body
+        entry_id = entry_id or self.ids.new("entry")
+        recorded_at = context.clock.now()
+        self.state.entries.append(SimEntry(entry_id, kind, body, happened_at, recorded_at))
         self._fact(
             "NoteRecorded" if kind == "note" else "LogEntryRecorded",
             context.clock.now(),
             kind=kind,
+            entry_id=entry_id,
             body=body,
             happened_at=happened_at,
-            recorded_at=context.clock.now(),
+            recorded_at=recorded_at,
         )
         context.emit("domain_fact", f"{kind}_recorded", source="Recording")
         return True

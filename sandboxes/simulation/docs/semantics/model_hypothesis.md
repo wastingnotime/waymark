@@ -39,6 +39,8 @@ entitlement, access decision, and daily metric summary.
 15. Log entries preserve caller-supplied activity time separately from
     Waymark-assigned recording time; summaries currently group by recording
     time.
+16. Notes and logs have immutable identities, and same-identity retries do not
+    append duplicate entry facts.
 
 ## Open questions
 
@@ -68,3 +70,6 @@ The payment idempotency slice is documented in
 `docs/slices/payment-idempotency.md`.
 
 The log timestamp slice is documented in `docs/slices/log-timestamps.md`.
+
+The entry identity slice is documented in
+`docs/slices/entry-identity.md`.

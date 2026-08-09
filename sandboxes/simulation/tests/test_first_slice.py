@@ -254,6 +254,20 @@ def test_daily_summary_groups_a_log_by_recorded_time_not_activity_time():
     assert summary == {"2026-09-03": 1}
 
 
+def test_entry_identity_makes_retried_writes_idempotent():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    assert simulation.record_note(context, "same", "entry-1")
+    assert simulation.record_note(context, "same", "entry-1")
+    assert len(simulation.state.entries) == 1
+    assert simulation.state.entries[0].entry_id == "entry-1"
+    assert not simulation.record_note(context, "different", "entry-1")
+    assert len(simulation.state.entries) == 1
+
+
 def test_replay_clears_old_cancellation_when_a_new_period_is_granted():
     start = datetime(2026, 9, 1, tzinfo=timezone.utc)
     end = start + timedelta(days=7)
