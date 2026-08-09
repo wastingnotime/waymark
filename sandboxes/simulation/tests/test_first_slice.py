@@ -364,10 +364,12 @@ def test_cancellation_request_is_idempotent():
     simulation.create_account(context)
     simulation.activate_period(context, start, start + timedelta(days=7))
     simulation.cancel(context)
+    cancellation_at = simulation.state.cancellation_at
     event_count = len(simulation.state.events)
     simulation.cancel(context)
     assert len(simulation.state.events) == event_count
     assert simulation.state.facts.count("CancellationScheduled") == 1
+    assert simulation.state.cancellation_at == cancellation_at
     assert any(event[0][1] == "duplicate_cancellation_ignored" for event in context.events)
 
 
