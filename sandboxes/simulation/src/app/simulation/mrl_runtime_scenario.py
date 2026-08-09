@@ -24,6 +24,9 @@ def create_simulation() -> Scenario:
     def create(context):
         simulation.create_account(context)
 
+    def duplicate_create(context):
+        simulation.create_account(context)
+
     def activate(context):
         payments.succeed("initial-period")
         simulation.activate_period(context, START, end)
@@ -178,6 +181,14 @@ def create_simulation() -> Scenario:
             for observation in context.observations.observations
         )
 
+    def account_bootstrap_is_unique(context):
+        if context.clock.now() < START + timedelta(minutes=1, seconds=30):
+            return True
+        return simulation.state.facts.count("AccountCreated") == 1 and any(
+            observation.name == "duplicate_account_creation_ignored"
+            for observation in context.observations.observations
+        )
+
     def duplicate_failure_is_observed(context):
         duplicate_at = START + timedelta(days=2, seconds=30)
         if context.clock.now() < duplicate_at:
@@ -195,6 +206,7 @@ def create_simulation() -> Scenario:
         actors=[Actor("subscriber")],
         scheduled_actions=[
             action(timedelta(minutes=1), "create_account", create),
+            action(timedelta(minutes=1, seconds=30), "duplicate_create_account", duplicate_create),
             action(timedelta(minutes=2), "activate_period", activate),
             action(timedelta(hours=1), "record_note", note),
             action(timedelta(hours=1, minutes=1), "record_retried_note", retried_note),
@@ -227,5 +239,6 @@ def create_simulation() -> Scenario:
             Invariant("log_timestamps_are_distinct", log_timestamps_are_distinct),
             Invariant("entry_ids_are_unique", entry_ids_are_unique),
             Invariant("private_workspace_is_owner_only", private_workspace_is_owner_only),
+            Invariant("account_bootstrap_is_unique", account_bootstrap_is_unique),
         ],
     )

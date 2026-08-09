@@ -302,6 +302,16 @@ def test_private_workspace_rejects_another_user():
     assert context.events[-1][1]["payload"]["reason"] == "unauthorized_user"
 
 
+def test_account_bootstrap_is_idempotent():
+    context = Context(datetime(2026, 9, 1, tzinfo=timezone.utc))
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.create_account(context)
+    assert simulation.state.facts.count("AccountCreated") == 1
+    assert simulation.state.facts.count("WorkspaceCreated") == 1
+    assert any(event[0][1] == "duplicate_account_creation_ignored" for event in context.events)
+
+
 def test_replay_clears_old_cancellation_when_a_new_period_is_granted():
     start = datetime(2026, 9, 1, tzinfo=timezone.utc)
     end = start + timedelta(days=7)

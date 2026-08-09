@@ -47,6 +47,8 @@ entitlement, access decision, and daily metric summary.
     is projection metadata, not a durable business fact.
 19. Only the workspace owner may access or record entries; unauthorized actors
     receive an explanatory rejection without domain mutation.
+20. Account bootstrap is idempotent and cannot create a second user or private
+    workspace in the first version.
 
 ## Open questions
 
@@ -88,3 +90,6 @@ The summary versioning slice is documented in
 
 The workspace ownership slice is documented in
 `docs/slices/workspace-ownership.md`.
+
+The account bootstrap slice is documented in
+`docs/slices/account-bootstrap.md`.

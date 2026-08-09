@@ -107,6 +107,9 @@ class WaymarkSimulation:
         return simulation
 
     def create_account(self, context: object) -> None:
+        if "AccountCreated" in self.state.facts:
+            context.emit("account_notice", "duplicate_account_creation_ignored", source="WaymarkSimulation")
+            return
         now = context.clock.now()
         self._fact("AccountCreated", now, user_id=str(self.state.user_id))
         self._fact("WorkspaceCreated", now, workspace_id=str(self.state.workspace_id))
