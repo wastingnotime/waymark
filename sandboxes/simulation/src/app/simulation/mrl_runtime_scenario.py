@@ -125,6 +125,15 @@ def create_simulation() -> Scenario:
             and replayed.state.processed_payment_ids == simulation.state.processed_payment_ids
         )
 
+    def duplicate_failure_is_observed(context):
+        duplicate_at = START + timedelta(days=2, seconds=30)
+        if context.clock.now() < duplicate_at:
+            return True
+        return any(
+            observation.name == "duplicate_payment_failure_ignored"
+            for observation in context.observations.observations
+        )
+
     return Scenario(
         name="waymark.subscription_backed_workspace",
         seed=20260901,
@@ -156,5 +165,6 @@ def create_simulation() -> Scenario:
             Invariant("renewal_opens_new_period", renewal_opens_new_period),
             Invariant("expired_interval_remains_closed", expired_interval_remains_closed),
             Invariant("event_replay_matches_live_state", replay_matches_live_state),
+            Invariant("duplicate_failure_is_observed", duplicate_failure_is_observed),
         ],
     )

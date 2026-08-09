@@ -20,9 +20,15 @@ class FakePaymentProvider:
         self.outcomes: dict[str, str] = {}
 
     def succeed(self, payment_id: str) -> str:
-        self.outcomes[payment_id] = "succeeded"
+        self._set_outcome(payment_id, "succeeded")
         return self.outcomes[payment_id]
 
     def fail(self, payment_id: str) -> str:
-        self.outcomes[payment_id] = "failed"
+        self._set_outcome(payment_id, "failed")
         return self.outcomes[payment_id]
+
+    def _set_outcome(self, payment_id: str, outcome: str) -> None:
+        existing = self.outcomes.get(payment_id)
+        if existing is not None and existing != outcome:
+            raise ValueError(f"conflicting outcome for payment: {payment_id}")
+        self.outcomes[payment_id] = outcome
