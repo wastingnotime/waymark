@@ -389,6 +389,7 @@ def test_expiry_job_is_idempotent():
     simulation.expire(context)
     assert len(simulation.state.events) == event_count
     assert simulation.state.facts.count("EntitlementExpired") == 1
+    assert not simulation.access_check(context)
     assert any(event[0][1] == "duplicate_expiry_ignored" for event in context.events)
 
 

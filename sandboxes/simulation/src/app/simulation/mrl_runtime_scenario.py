@@ -236,7 +236,9 @@ def create_simulation() -> Scenario:
         duplicate_at = START + timedelta(days=7, seconds=10)
         if context.clock.now() < duplicate_at:
             return True
-        return simulation.state.facts.count("EntitlementExpired") == 1 and any(
+        if simulation.state.period_start != START:
+            return True
+        return not simulation.state.access_allowed(context.clock.now()) and simulation.state.facts.count("EntitlementExpired") == 1 and any(
             observation.name == "duplicate_expiry_ignored"
             for observation in context.observations.observations
         )
