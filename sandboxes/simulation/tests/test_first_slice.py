@@ -20,6 +20,7 @@ def test_first_slice_preserves_facts_through_failure_and_recovery():
     context = Context(start)
     simulation = WaymarkSimulation()
     simulation.create_account(context)
+    assert simulation.state.payer_id == simulation.state.user_id
     simulation.activate_period(context, start, start + timedelta(days=7))
     assert simulation.record_note(context, "one")
     simulation.fail_payment(context)

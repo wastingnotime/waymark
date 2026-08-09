@@ -135,7 +135,7 @@ def create_simulation() -> Scenario:
         payload = inspections[-1].payload
         return payload.get("reason") == "payment_failed" and payload.get("payment_failed") is True and all(
             key in payload
-            for key in ("period_start", "period_end", "payment_failed", "expired", "cancelled", "event_count")
+            for key in ("payer_id", "period_start", "period_end", "payment_failed", "expired", "cancelled", "event_count")
         )
 
     def summary_timezone_recorded(context):
@@ -181,6 +181,7 @@ def create_simulation() -> Scenario:
             and replayed.state.period_start == simulation.state.period_start
             and replayed.state.period_end == simulation.state.period_end
             and replayed.state.subscription_id == simulation.state.subscription_id
+            and replayed.state.payer_id == simulation.state.payer_id
             and replayed.state.cancelled == simulation.state.cancelled
             and replayed.state.cancellation_at == simulation.state.cancellation_at
             and replayed.state.processed_payment_ids == simulation.state.processed_payment_ids
@@ -216,6 +217,9 @@ def create_simulation() -> Scenario:
             observation.name == "duplicate_account_creation_ignored"
             for observation in context.observations.observations
         )
+
+    def payer_identity_is_explicit(context):
+        return simulation.state.payer_id == simulation.state.user_id
 
     def pre_entitlement_is_restricted(context):
         if context.clock.now() < START + timedelta(minutes=1, seconds=5):
@@ -322,6 +326,7 @@ def create_simulation() -> Scenario:
             Invariant("entry_ids_are_unique", entry_ids_are_unique),
             Invariant("private_workspace_is_owner_only", private_workspace_is_owner_only),
             Invariant("account_bootstrap_is_unique", account_bootstrap_is_unique),
+            Invariant("payer_identity_is_explicit", payer_identity_is_explicit),
             Invariant("pre_entitlement_is_restricted", pre_entitlement_is_restricted),
             Invariant("subscription_request_is_unique", subscription_request_is_unique),
             Invariant("cancellation_request_is_unique", cancellation_request_is_unique),

@@ -63,6 +63,8 @@ entitlement, access decision, and daily metric summary.
     with reason `no_entitlement`.
 27. Entitlement activation periods are positive and cannot overlap the current
     effective period.
+28. The first-version payer is explicitly represented and equals the user while
+    retaining a separate billing role.
 
 ## Open questions
 
@@ -128,3 +130,6 @@ The pre-entitlement access slice is documented in
 
 The period overlap slice is documented in
 `docs/slices/period-overlap.md`.
+
+The payer identity slice is documented in
+`docs/slices/payer-identity.md`.

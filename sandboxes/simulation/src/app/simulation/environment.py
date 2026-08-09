@@ -25,6 +25,7 @@ class SimEntry:
 @dataclass
 class SimState:
     user_id: str
+    payer_id: str
     workspace_id: str
     subscription_id: str | None = None
     period_start: datetime | None = None
@@ -57,6 +58,7 @@ class WaymarkSimulation:
         self.ids = ids or DeterministicIds()
         self.state = SimState(
             user_id=self.ids.new("user"),
+            payer_id="",
             workspace_id=self.ids.new("workspace"),
         )
 
@@ -71,6 +73,7 @@ class WaymarkSimulation:
         for event in events:
             if event.name == "AccountCreated":
                 simulation.state.user_id = str(event.payload["user_id"])
+                simulation.state.payer_id = str(event.payload["payer_id"])
                 simulation.ids.reserve(simulation.state.user_id)
             elif event.name == "WorkspaceCreated":
                 simulation.state.workspace_id = str(event.payload["workspace_id"])
@@ -118,7 +121,8 @@ class WaymarkSimulation:
             context.emit("account_notice", "duplicate_account_creation_ignored", source="WaymarkSimulation")
             return
         now = context.clock.now()
-        self._fact("AccountCreated", now, user_id=str(self.state.user_id))
+        self.state.payer_id = self.state.user_id
+        self._fact("AccountCreated", now, user_id=str(self.state.user_id), payer_id=str(self.state.payer_id))
         self._fact("WorkspaceCreated", now, workspace_id=str(self.state.workspace_id))
         context.emit("domain_fact", "account_created", source="WaymarkSimulation")
 
@@ -250,6 +254,7 @@ class WaymarkSimulation:
         inspection = {
             "actor": actor,
             "user_id": self.state.user_id,
+            "payer_id": self.state.payer_id,
             "workspace_id": self.state.workspace_id,
             "access_allowed": decision,
             "reason": "entitled" if decision else self._restriction_reason(),
