@@ -30,6 +30,7 @@ class SimState:
     cancellation_at: datetime | None = None
     entries: list[SimEntry] = field(default_factory=list)
     events: list[SimFact] = field(default_factory=list)
+    processed_payment_ids: set[str] = field(default_factory=set)
 
     @property
     def facts(self) -> list[str]:
@@ -76,6 +77,9 @@ class WaymarkSimulation:
                 simulation.state.cancellation_at = None
             elif event.name == "PaymentFailed":
                 simulation.state.payment_failed = True
+                payment_id = event.payload.get("payment_id")
+                if payment_id:
+                    simulation.state.processed_payment_ids.add(str(payment_id))
             elif event.name in {"EntitlementRestored", "OperatorInterventionRecorded"}:
                 simulation.state.payment_failed = False
             elif event.name == "CancellationScheduled":
@@ -131,9 +135,14 @@ class WaymarkSimulation:
     def record_log(self, context: object, body: str, happened_at: datetime) -> bool:
         return self._record(context, "log_entry", body, happened_at)
 
-    def fail_payment(self, context: object) -> None:
+    def fail_payment(self, context: object, payment_id: str | None = None) -> None:
+        if payment_id and payment_id in self.state.processed_payment_ids:
+            context.emit("payment_notice", "duplicate_payment_failure_ignored", source="PaymentProvider", payload={"payment_id": payment_id})
+            return
         self.state.payment_failed = True
-        self._fact("PaymentFailed", context.clock.now())
+        if payment_id:
+            self.state.processed_payment_ids.add(payment_id)
+        self._fact("PaymentFailed", context.clock.now(), payment_id=payment_id)
         context.emit("domain_fact", "payment_failed", source="PaymentProvider")
         context.emit("access_changed", "workspace_restricted", source="Access", payload={"reason": "payment_failed"})
 

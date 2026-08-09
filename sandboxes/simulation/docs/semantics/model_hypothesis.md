@@ -34,6 +34,8 @@ entitlement, access decision, and daily metric summary.
     not reopen the expired interval.
 13. Live state can be rehydrated from the ordered fact history without emitting
     new facts.
+14. Payment correlation IDs make repeated provider delivery idempotent at the
+    simulation boundary.
 
 ## Open questions
 
@@ -58,3 +60,6 @@ The timezone summary slice is documented in
 The renewal slice is documented in `docs/slices/renewal-after-expiry.md`.
 
 The replay slice is documented in `docs/slices/event-replay.md`.
+
+The payment idempotency slice is documented in
+`docs/slices/payment-idempotency.md`.

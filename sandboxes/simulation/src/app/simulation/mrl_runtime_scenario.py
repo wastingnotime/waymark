@@ -33,10 +33,13 @@ def create_simulation() -> Scenario:
 
     def fail(context):
         payments.fail("renewal-1")
-        simulation.fail_payment(context)
+        simulation.fail_payment(context, "renewal-1")
 
     def restricted_write(context):
         simulation.record_log(context, "This write should be rejected", context.clock.now())
+
+    def duplicate_fail(context):
+        simulation.fail_payment(context, "renewal-1")
 
     def inspect(context):
         simulation.operator_inspect(context, "support-operator")
@@ -119,6 +122,7 @@ def create_simulation() -> Scenario:
             and replayed.state.period_end == simulation.state.period_end
             and replayed.state.cancelled == simulation.state.cancelled
             and replayed.state.cancellation_at == simulation.state.cancellation_at
+            and replayed.state.processed_payment_ids == simulation.state.processed_payment_ids
         )
 
     return Scenario(
@@ -132,6 +136,7 @@ def create_simulation() -> Scenario:
             action(timedelta(minutes=2), "activate_period", activate),
             action(timedelta(hours=1), "record_note", note),
             action(timedelta(days=2), "payment_failure", fail),
+            action(timedelta(days=2, seconds=30), "duplicate_payment_failure", duplicate_fail),
             action(timedelta(days=2, minutes=1), "restricted_write", restricted_write),
             action(timedelta(days=2, minutes=2), "operator_inspection", inspect),
             action(timedelta(days=2, minutes=3), "operator_restore", operator_restore),

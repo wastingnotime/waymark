@@ -210,6 +210,18 @@ def test_event_history_replays_to_the_same_state():
     assert replayed.state.period_end == simulation.state.period_end
 
 
+def test_duplicate_payment_failure_delivery_does_not_duplicate_facts():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    simulation.fail_payment(context, "renewal-1")
+    simulation.fail_payment(context, "renewal-1")
+    assert simulation.state.facts.count("PaymentFailed") == 1
+    assert any(event[0][1] == "duplicate_payment_failure_ignored" for event in context.events)
+
+
 def test_replay_clears_old_cancellation_when_a_new_period_is_granted():
     start = datetime(2026, 9, 1, tzinfo=timezone.utc)
     end = start + timedelta(days=7)
