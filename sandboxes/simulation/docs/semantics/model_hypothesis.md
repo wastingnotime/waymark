@@ -36,6 +36,9 @@ entitlement, access decision, and daily metric summary.
     new facts.
 14. Payment correlation IDs make repeated provider delivery idempotent at the
     simulation boundary.
+15. Log entries preserve caller-supplied activity time separately from
+    Waymark-assigned recording time; summaries currently group by recording
+    time.
 
 ## Open questions
 
@@ -63,3 +66,5 @@ The replay slice is documented in `docs/slices/event-replay.md`.
 
 The payment idempotency slice is documented in
 `docs/slices/payment-idempotency.md`.
+
+The log timestamp slice is documented in `docs/slices/log-timestamps.md`.

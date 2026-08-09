@@ -55,7 +55,7 @@ def create_simulation() -> Scenario:
         simulation.cancel(context)
 
     def log(context):
-        simulation.record_log(context, "Payment recovered and access returned", context.clock.now())
+        simulation.record_log(context, "Payment recovered and access returned", START + timedelta(days=1))
 
     def summary(context):
         simulation.daily_summary(context, START, context.clock.now(), "America/Sao_Paulo")
@@ -125,6 +125,15 @@ def create_simulation() -> Scenario:
             and replayed.state.processed_payment_ids == simulation.state.processed_payment_ids
         )
 
+    def log_timestamps_are_distinct(context):
+        logs = [entry for entry in simulation.state.entries if entry.kind == "log_entry"]
+        if not logs:
+            return True
+        return any(
+            log.happened_at == START + timedelta(days=1) and log.recorded_at > log.happened_at
+            for log in logs
+        )
+
     def duplicate_failure_is_observed(context):
         duplicate_at = START + timedelta(days=2, seconds=30)
         if context.clock.now() < duplicate_at:
@@ -166,5 +175,6 @@ def create_simulation() -> Scenario:
             Invariant("expired_interval_remains_closed", expired_interval_remains_closed),
             Invariant("event_replay_matches_live_state", replay_matches_live_state),
             Invariant("duplicate_failure_is_observed", duplicate_failure_is_observed),
+            Invariant("log_timestamps_are_distinct", log_timestamps_are_distinct),
         ],
     )

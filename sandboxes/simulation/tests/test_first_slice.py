@@ -229,6 +229,19 @@ def test_provider_rejects_conflicting_outcomes_for_one_payment_id():
         provider.fail("payment-1")
 
 
+def test_log_preserves_happened_at_separately_from_recorded_at():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    recorded = start + timedelta(days=2)
+    context = Context(recorded)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    assert simulation.record_log(context, "happened earlier", start)
+    log = simulation.state.entries[-1]
+    assert log.happened_at == start
+    assert log.recorded_at == recorded
+
+
 def test_replay_clears_old_cancellation_when_a_new_period_is_granted():
     start = datetime(2026, 9, 1, tzinfo=timezone.utc)
     end = start + timedelta(days=7)
