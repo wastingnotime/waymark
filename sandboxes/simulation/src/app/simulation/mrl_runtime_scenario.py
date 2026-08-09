@@ -100,7 +100,7 @@ def create_simulation() -> Scenario:
         if not inspections:
             return True
         payload = inspections[-1].payload
-        return all(
+        return payload.get("reason") == "payment_failed" and payload.get("payment_failed") is True and all(
             key in payload
             for key in ("period_start", "period_end", "payment_failed", "expired", "cancelled", "event_count")
         )
