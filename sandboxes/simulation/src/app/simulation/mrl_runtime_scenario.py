@@ -27,6 +27,9 @@ def create_simulation() -> Scenario:
     def duplicate_create(context):
         simulation.create_account(context)
 
+    def pre_entitlement_access(context):
+        simulation.access_check(context)
+
     def subscribe(context):
         simulation.request_subscription(context, "subscription-1")
 
@@ -214,6 +217,16 @@ def create_simulation() -> Scenario:
             for observation in context.observations.observations
         )
 
+    def pre_entitlement_is_restricted(context):
+        if context.clock.now() < START + timedelta(minutes=1, seconds=5):
+            return True
+        return any(
+            observation.type == "access_decision"
+            and observation.payload.get("reason") == "no_entitlement"
+            and observation.payload.get("allowed") is False
+            for observation in context.observations.observations
+        )
+
     def subscription_request_is_unique(context):
         duplicate_at = START + timedelta(minutes=1, seconds=50)
         if context.clock.now() < duplicate_at:
@@ -266,6 +279,7 @@ def create_simulation() -> Scenario:
         actors=[Actor("subscriber")],
         scheduled_actions=[
             action(timedelta(minutes=1), "create_account", create),
+            action(timedelta(minutes=1, seconds=5), "pre_entitlement_access", pre_entitlement_access),
             action(timedelta(minutes=1, seconds=30), "duplicate_create_account", duplicate_create),
             action(timedelta(minutes=1, seconds=45), "request_subscription", subscribe),
             action(timedelta(minutes=1, seconds=50), "duplicate_subscription", subscribe),
@@ -308,6 +322,7 @@ def create_simulation() -> Scenario:
             Invariant("entry_ids_are_unique", entry_ids_are_unique),
             Invariant("private_workspace_is_owner_only", private_workspace_is_owner_only),
             Invariant("account_bootstrap_is_unique", account_bootstrap_is_unique),
+            Invariant("pre_entitlement_is_restricted", pre_entitlement_is_restricted),
             Invariant("subscription_request_is_unique", subscription_request_is_unique),
             Invariant("cancellation_request_is_unique", cancellation_request_is_unique),
             Invariant("expiry_job_is_unique", expiry_job_is_unique),

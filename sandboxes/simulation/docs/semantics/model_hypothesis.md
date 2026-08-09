@@ -59,6 +59,8 @@ entitlement, access decision, and daily metric summary.
     restored, with duplicate attempts observable and non-mutating.
 25. Expiry processing is idempotent for a current entitlement interval and keeps
     access restricted after repeated jobs.
+26. Account creation without an effective entitlement yields restricted access
+    with reason `no_entitlement`.
 
 ## Open questions
 
@@ -118,3 +120,6 @@ The operator intervention idempotency slice is documented in
 
 The expiry idempotency slice is documented in
 `docs/slices/expiry-idempotency.md`.
+
+The pre-entitlement access slice is documented in
+`docs/slices/pre-entitlement-access.md`.

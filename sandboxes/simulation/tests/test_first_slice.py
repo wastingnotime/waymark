@@ -351,6 +351,14 @@ def test_account_bootstrap_is_idempotent():
     assert any(event[0][1] == "duplicate_account_creation_ignored" for event in context.events)
 
 
+def test_access_is_restricted_before_entitlement():
+    context = Context(datetime(2026, 9, 1, tzinfo=timezone.utc))
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    assert not simulation.access_check(context)
+    assert context.events[-1][1]["payload"]["reason"] == "no_entitlement"
+
+
 def test_subscription_request_is_idempotent():
     context = Context(datetime(2026, 9, 1, tzinfo=timezone.utc))
     simulation = WaymarkSimulation()
