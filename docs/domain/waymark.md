@@ -51,6 +51,18 @@ The entitlement is evidence created from subscription facts. Access is allowed
 only when an entitlement is effective at the instant being checked and is not
 suspended. No separate `has_access` field may override those facts.
 
+The access decision is evaluated in this order:
+
+1. Find the entitlement covering the requested instant (`effective_from <= t <
+   effective_until`).
+2. If none exists, return `restricted` with reason `no_entitlement`.
+3. If the entitlement has an effective suspension at `t`, return `restricted`
+   with that reason.
+4. Otherwise return `allowed`.
+
+The result should include the evaluated instant and the reason so an operator
+can explain a decision. It should not be cached as authoritative state.
+
 ### Insights
 
 Insights derives metric snapshots from notes and log entries. A snapshot can be
@@ -92,6 +104,36 @@ coupons, and public entries are outside this model.
    question.
 10. A metric snapshot identifies its source range and calculation version and
     can always be recomputed from entries.
+
+## Lifecycle state transitions
+
+Subscription and entitlement state are separate: a subscription describes the
+commercial agreement, while an entitlement describes access for a bounded
+period.
+
+```text
+Subscription:
+requested ──payment succeeds──> active
+active ──cancel──> cancellation_scheduled
+active ──renewal fails──> past_due
+past_due ──recovery──> active
+active or cancellation_scheduled or past_due
+  └─period ends without renewal──> expired
+
+Entitlement:
+granted ──payment failure──> suspended ──recovery──> restored
+granted or restored ──period ends──> expired
+```
+
+`past_due` describes the subscription's commercial state; `suspended` is the
+access consequence. A recovery before the paid period ends restores that same
+entitlement. A recovery after it ends creates a new entitlement for the newly
+paid period and does not reopen the expired interval. Cancellation is a
+scheduled transition, not an immediate suspension.
+
+The transition that ends a period must be idempotent. Replaying a payment
+notification or period-end job must not create overlapping entitlements or
+duplicate operator actions.
 
 ## Provisional commercial policy
 
@@ -135,6 +177,26 @@ sourcing.
 - `EntitlementExpired`
 - `OperatorInterventionRecorded`
 
+Each fact carries a Waymark-owned identifier, the subject identifier (user,
+workspace, subscription, entitlement, or entry), and the time at which Waymark
+accepted it. Facts caused by an external payment notification additionally
+carry an adapter correlation key so duplicate delivery can be recognized.
+
+The minimum entry shapes are:
+
+```text
+Note {
+  id, workspace_id, body, recorded_at
+}
+
+LogEntry {
+  id, workspace_id, body, happened_at, recorded_at
+}
+```
+
+`body` is non-empty text. Waymark assigns `id` and `recorded_at`; callers may
+choose `happened_at` for a log entry but may not backdate `recorded_at`.
+
 ### Derived views
 
 - current subscription state
@@ -169,6 +231,10 @@ The application boundary initially needs these intentions:
 - get daily entry summary
 - inspect account and subscription
 - intervene in entitlement
+
+Commands that change commercial state must be safe to retry with an idempotency
+key. Recording an entry may be retried by entry id, so a network timeout cannot
+silently create duplicates.
 
 ## Acceptance scenarios
 
