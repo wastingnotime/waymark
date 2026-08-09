@@ -24,6 +24,8 @@ entitlement, access decision, and daily metric summary.
 6. At the exclusive entitlement boundary, access is restricted.
 7. Notes and logs remain durable across commercial state changes.
 8. Daily summaries are recomputable projections, not facts.
+9. Simulation facts are append-only, ordered, and replayable; provider outcomes
+   enter through a deterministic fake boundary.
 
 ## Open questions
 

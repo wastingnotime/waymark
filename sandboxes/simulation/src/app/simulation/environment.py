@@ -5,7 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from collections import Counter
-from uuid import UUID, uuid4
+from app.simulation.events import SimFact
+from app.simulation.ports import DeterministicIds
 
 
 @dataclass(frozen=True)
@@ -18,15 +19,20 @@ class SimEntry:
 
 @dataclass
 class SimState:
-    user_id: UUID = field(default_factory=uuid4)
-    workspace_id: UUID = field(default_factory=uuid4)
+    user_id: str
+    workspace_id: str
     period_start: datetime | None = None
     period_end: datetime | None = None
     payment_failed: bool = False
     expired: bool = False
     cancelled: bool = False
     entries: list[SimEntry] = field(default_factory=list)
-    facts: list[str] = field(default_factory=list)
+    events: list[SimFact] = field(default_factory=list)
+
+    @property
+    def facts(self) -> list[str]:
+        """Compatibility projection for scenario invariants and inspection."""
+        return [event.name for event in self.events]
 
     def access_allowed(self, at: datetime) -> bool:
         return (
@@ -39,18 +45,28 @@ class SimState:
 
 
 class WaymarkSimulation:
-    def __init__(self) -> None:
-        self.state = SimState()
+    def __init__(self, ids: DeterministicIds | None = None) -> None:
+        self.ids = ids or DeterministicIds()
+        self.state = SimState(
+            user_id=self.ids.new("user"),
+            workspace_id=self.ids.new("workspace"),
+        )
+
+    def _fact(self, name: str, occurred_at: datetime, **payload: object) -> None:
+        self.state.events.append(SimFact(len(self.state.events), name, occurred_at, payload))
 
     def create_account(self, context: object) -> None:
-        self.state.facts.extend(("AccountCreated", "WorkspaceCreated"))
+        now = context.clock.now()
+        self._fact("AccountCreated", now, user_id=str(self.state.user_id))
+        self._fact("WorkspaceCreated", now, workspace_id=str(self.state.workspace_id))
         context.emit("domain_fact", "account_created", source="WaymarkSimulation")
 
     def activate_period(self, context: object, start: datetime, end: datetime) -> None:
         self.state.period_start, self.state.period_end = start, end
         self.state.payment_failed = False
         self.state.expired = False
-        self.state.facts.extend(("PaymentSucceeded", "EntitlementGranted"))
+        self._fact("PaymentSucceeded", context.clock.now(), period_end=end)
+        self._fact("EntitlementGranted", context.clock.now(), period_start=start, period_end=end)
         context.emit("domain_fact", "payment_succeeded", source="Billing")
         context.emit("domain_fact", "entitlement_granted", source="Access")
 
@@ -62,24 +78,25 @@ class WaymarkSimulation:
 
     def fail_payment(self, context: object) -> None:
         self.state.payment_failed = True
-        self.state.facts.append("PaymentFailed")
+        self._fact("PaymentFailed", context.clock.now())
         context.emit("domain_fact", "payment_failed", source="PaymentProvider")
         context.emit("access_changed", "workspace_restricted", source="Access", payload={"reason": "payment_failed"})
 
     def recover_payment(self, context: object) -> None:
         self.state.payment_failed = False
-        self.state.facts.extend(("PaymentSucceeded", "EntitlementRestored"))
+        self._fact("PaymentSucceeded", context.clock.now())
+        self._fact("EntitlementRestored", context.clock.now())
         context.emit("domain_fact", "payment_recovered", source="PaymentProvider")
         context.emit("access_changed", "workspace_allowed", source="Access", payload={"reason": "recovered"})
 
     def cancel(self, context: object) -> None:
         self.state.cancelled = True
-        self.state.facts.append("CancellationScheduled")
+        self._fact("CancellationScheduled", context.clock.now())
         context.emit("domain_fact", "cancellation_scheduled", source="Billing")
 
     def expire(self, context: object) -> None:
         self.state.expired = True
-        self.state.facts.append("EntitlementExpired")
+        self._fact("EntitlementExpired", context.clock.now())
         context.emit("domain_fact", "entitlement_expired", source="Access")
         context.emit("access_changed", "workspace_restricted", source="Access", payload={"reason": "expired"})
 
@@ -114,7 +131,7 @@ class WaymarkSimulation:
             context.emit("command_rejected", f"{kind}_rejected", source="Recording", payload={"reason": "restricted"})
             return False
         self.state.entries.append(SimEntry(kind, body, happened_at, context.clock.now()))
-        self.state.facts.append("NoteRecorded" if kind == "note" else "LogEntryRecorded")
+        self._fact("NoteRecorded" if kind == "note" else "LogEntryRecorded", context.clock.now(), kind=kind)
         context.emit("domain_fact", f"{kind}_recorded", source="Recording")
         return True
 

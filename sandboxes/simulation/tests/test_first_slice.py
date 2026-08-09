@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from app.simulation.environment import WaymarkSimulation
+from app.simulation.ports import DeterministicIds, FakePaymentProvider
 
 
 class Context:
@@ -60,3 +61,21 @@ def test_cancellation_keeps_access_until_period_end():
     simulation.activate_period(context, start, end)
     simulation.cancel(context)
     assert simulation.access_check(context)
+
+
+def test_event_history_and_provider_outcomes_are_deterministic():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation(DeterministicIds())
+    provider = FakePaymentProvider()
+    provider.succeed("initial")
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    assert simulation.state.user_id == "waymark-user-0001"
+    assert [event.name for event in simulation.state.events] == [
+        "AccountCreated",
+        "WorkspaceCreated",
+        "PaymentSucceeded",
+        "EntitlementGranted",
+    ]
+    assert provider.outcomes == {"initial": "succeeded"}

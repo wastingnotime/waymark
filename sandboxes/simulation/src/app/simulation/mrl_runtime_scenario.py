@@ -7,6 +7,7 @@ from mrl_simulation_runtime.invariants import Invariant
 from mrl_simulation_runtime.scenario import InitialScheduledAction, Scenario
 
 from app.simulation.environment import WaymarkSimulation
+from app.simulation.ports import FakePaymentProvider
 
 
 START = datetime(2026, 9, 1, tzinfo=timezone.utc)
@@ -14,6 +15,7 @@ START = datetime(2026, 9, 1, tzinfo=timezone.utc)
 
 def create_simulation() -> Scenario:
     simulation = WaymarkSimulation()
+    payments = FakePaymentProvider()
     end = START + timedelta(days=7)
 
     def action(offset: timedelta, name: str, callback):
@@ -23,18 +25,21 @@ def create_simulation() -> Scenario:
         simulation.create_account(context)
 
     def activate(context):
+        payments.succeed("initial-period")
         simulation.activate_period(context, START, end)
 
     def note(context):
         simulation.record_note(context, "Notice what happened today")
 
     def fail(context):
+        payments.fail("renewal-1")
         simulation.fail_payment(context)
 
     def restricted_write(context):
         simulation.record_log(context, "This write should be rejected", context.clock.now())
 
     def recover(context):
+        payments.succeed("renewal-1-recovered")
         simulation.recover_payment(context)
 
     def cancel(context):
