@@ -41,6 +41,8 @@ entitlement, access decision, and daily metric summary.
     time.
 16. Notes and logs have immutable identities, and same-identity retries do not
     append duplicate entry facts.
+17. Operator inspection is a read-only projection containing enough lifecycle
+    state to explain the current access decision.
 
 ## Open questions
 
@@ -73,3 +75,6 @@ The log timestamp slice is documented in `docs/slices/log-timestamps.md`.
 
 The entry identity slice is documented in
 `docs/slices/entry-identity.md`.
+
+The operator inspection read model is documented in
+`docs/slices/operator-inspection-read-model.md`.

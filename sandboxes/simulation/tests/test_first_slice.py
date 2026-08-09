@@ -103,6 +103,8 @@ def test_operator_can_inspect_and_restore_a_suspended_entitlement():
     simulation.fail_payment(context)
     inspection = simulation.operator_inspect(context, "support-operator")
     assert inspection["reason"] == "payment_failed"
+    assert inspection["period_end"] == "2026-09-08T00:00:00+00:00"
+    assert inspection["event_count"] == 5
     assert simulation.operator_restore(context, "support-operator", "verified payment manually")
     assert simulation.access_check(context)
     assert simulation.state.facts.count("OperatorInterventionRecorded") == 1

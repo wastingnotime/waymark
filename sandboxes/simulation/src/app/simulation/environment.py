@@ -206,6 +206,13 @@ class WaymarkSimulation:
             "access_allowed": decision,
             "reason": "entitled" if decision else self._restriction_reason(),
             "entry_count": len(self.state.entries),
+            "period_start": self.state.period_start.isoformat() if self.state.period_start else None,
+            "period_end": self.state.period_end.isoformat() if self.state.period_end else None,
+            "payment_failed": self.state.payment_failed,
+            "expired": self.state.expired,
+            "cancelled": self.state.cancelled,
+            "cancellation_at": self.state.cancellation_at.isoformat() if self.state.cancellation_at else None,
+            "event_count": len(self.state.events),
         }
         context.emit("operator_observation", "account_inspected", source="Operations", payload=inspection)
         return inspection

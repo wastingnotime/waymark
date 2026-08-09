@@ -91,6 +91,20 @@ def create_simulation() -> Scenario:
             return True
         return "EntitlementRestored" in simulation.state.facts and not simulation.state.payment_failed
 
+    def operator_inspection_is_complete(context):
+        inspections = [
+            observation
+            for observation in context.observations.observations
+            if observation.type == "operator_observation" and observation.name == "account_inspected"
+        ]
+        if not inspections:
+            return True
+        payload = inspections[-1].payload
+        return all(
+            key in payload
+            for key in ("period_start", "period_end", "payment_failed", "expired", "cancelled", "event_count")
+        )
+
     def summary_timezone_recorded(context):
         summaries = [
             observation
@@ -179,6 +193,7 @@ def create_simulation() -> Scenario:
             Invariant("durable_entries_survive_payment_failure", invariant),
             Invariant("cancellation_respects_paid_boundary", cancellation_boundary),
             Invariant("operator_intervention_is_audited", intervention_audited),
+            Invariant("operator_inspection_is_complete", operator_inspection_is_complete),
             Invariant("summary_timezone_is_recorded", summary_timezone_recorded),
             Invariant("renewal_opens_new_period", renewal_opens_new_period),
             Invariant("expired_interval_remains_closed", expired_interval_remains_closed),
