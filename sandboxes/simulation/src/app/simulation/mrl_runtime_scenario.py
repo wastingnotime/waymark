@@ -62,6 +62,9 @@ def create_simulation() -> Scenario:
     def operator_restore(context):
         simulation.operator_restore(context, "support-operator", "verified payment manually")
 
+    def duplicate_operator_restore(context):
+        simulation.operator_restore(context, "support-operator", "verified payment manually")
+
     def recover(context):
         payments.succeed("renewal-1-recovered")
         simulation.recover_payment(context)
@@ -105,6 +108,15 @@ def create_simulation() -> Scenario:
         if "OperatorInterventionRecorded" not in simulation.state.facts:
             return True
         return "EntitlementRestored" in simulation.state.facts and not simulation.state.payment_failed
+
+    def operator_restore_is_unique(context):
+        duplicate_at = START + timedelta(days=2, minutes=3, seconds=10)
+        if context.clock.now() < duplicate_at:
+            return True
+        return simulation.state.facts.count("OperatorInterventionRecorded") == 1 and any(
+            observation.name == "duplicate_operator_restore_ignored"
+            for observation in context.observations.observations
+        )
 
     def operator_inspection_is_complete(context):
         inspections = [
@@ -254,6 +266,7 @@ def create_simulation() -> Scenario:
             action(timedelta(days=2, minutes=1), "restricted_write", restricted_write),
             action(timedelta(days=2, minutes=2), "operator_inspection", inspect),
             action(timedelta(days=2, minutes=3), "operator_restore", operator_restore),
+            action(timedelta(days=2, minutes=3, seconds=10), "duplicate_operator_restore", duplicate_operator_restore),
             action(timedelta(days=3), "payment_recovery", recover),
             action(timedelta(days=3, minutes=1), "record_log", log),
             action(timedelta(days=3, minutes=2), "daily_summary", summary),
@@ -267,6 +280,7 @@ def create_simulation() -> Scenario:
             Invariant("durable_entries_survive_payment_failure", invariant),
             Invariant("cancellation_respects_paid_boundary", cancellation_boundary),
             Invariant("operator_intervention_is_audited", intervention_audited),
+            Invariant("operator_restore_is_unique", operator_restore_is_unique),
             Invariant("operator_inspection_is_complete", operator_inspection_is_complete),
             Invariant("summary_timezone_is_recorded", summary_timezone_recorded),
             Invariant("summary_version_is_recorded", summary_version_recorded),

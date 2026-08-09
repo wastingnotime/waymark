@@ -55,6 +55,8 @@ entitlement, access decision, and daily metric summary.
     just like failure notifications.
 23. Cancellation requests are idempotent for the current subscription and keep
     one paid-period boundary.
+24. Operator restoration is idempotent after the entitlement is already
+    restored, with duplicate attempts observable and non-mutating.
 
 ## Open questions
 
@@ -108,3 +110,6 @@ The payment success idempotency slice is documented in
 
 The cancellation idempotency slice is documented in
 `docs/slices/cancellation-idempotency.md`.
+
+The operator intervention idempotency slice is documented in
+`docs/slices/operator-intervention-idempotency.md`.

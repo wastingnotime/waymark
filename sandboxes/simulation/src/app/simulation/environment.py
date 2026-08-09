@@ -262,6 +262,7 @@ class WaymarkSimulation:
         if not actor.strip() or not reason.strip():
             raise ValueError("operator actor and reason are required")
         if not self.state.payment_failed:
+            context.emit("operator_notice", "duplicate_operator_restore_ignored", source="Operations")
             return False
         self.state.payment_failed = False
         self._fact("OperatorInterventionRecorded", context.clock.now(), actor=actor, reason=reason)
