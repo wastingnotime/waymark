@@ -204,6 +204,9 @@ class WaymarkSimulation:
     def cancel(self, context: object) -> None:
         if self.state.period_end is None:
             raise ValueError("cannot cancel without an active paid period")
+        if self.state.cancelled:
+            context.emit("subscription_notice", "duplicate_cancellation_ignored", source="Billing")
+            return
         self.state.cancelled = True
         self.state.cancellation_at = self.state.period_end
         self._fact("CancellationScheduled", context.clock.now(), effective_at=self.state.cancellation_at)

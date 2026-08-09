@@ -357,6 +357,20 @@ def test_subscription_request_is_idempotent():
     assert simulation.state.subscription_id == "subscription-1"
 
 
+def test_cancellation_request_is_idempotent():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    simulation.cancel(context)
+    event_count = len(simulation.state.events)
+    simulation.cancel(context)
+    assert len(simulation.state.events) == event_count
+    assert simulation.state.facts.count("CancellationScheduled") == 1
+    assert any(event[0][1] == "duplicate_cancellation_ignored" for event in context.events)
+
+
 def test_replay_clears_old_cancellation_when_a_new_period_is_granted():
     start = datetime(2026, 9, 1, tzinfo=timezone.utc)
     end = start + timedelta(days=7)

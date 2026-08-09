@@ -53,6 +53,8 @@ entitlement, access decision, and daily metric summary.
     duplicate same-identity request is idempotent.
 22. Successful payment notifications are idempotent by payment correlation ID,
     just like failure notifications.
+23. Cancellation requests are idempotent for the current subscription and keep
+    one paid-period boundary.
 
 ## Open questions
 
@@ -103,3 +105,6 @@ The subscription request slice is documented in
 
 The payment success idempotency slice is documented in
 `docs/slices/payment-success-idempotency.md`.
+
+The cancellation idempotency slice is documented in
+`docs/slices/cancellation-idempotency.md`.
