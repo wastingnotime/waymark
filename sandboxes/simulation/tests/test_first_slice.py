@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app.simulation.environment import WaymarkSimulation
+from app.simulation.environment import SUMMARY_CALCULATION_VERSION, WaymarkSimulation
 from app.simulation.ports import DeterministicIds, FakePaymentProvider
 
 
@@ -160,6 +160,7 @@ def test_summary_observation_records_timezone_without_mutating_events():
     simulation.daily_summary(context, start, start + timedelta(days=7), "America/Sao_Paulo")
     assert len(simulation.state.events) == event_count
     assert context.events[-1][1]["payload"]["timezone"] == "America/Sao_Paulo"
+    assert context.events[-1][1]["payload"]["calculation_version"] == SUMMARY_CALCULATION_VERSION
 
 
 def test_renewal_after_expiry_opens_a_new_period():

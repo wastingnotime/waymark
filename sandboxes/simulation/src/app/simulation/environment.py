@@ -10,6 +10,9 @@ from app.simulation.events import SimFact
 from app.simulation.ports import DeterministicIds
 
 
+SUMMARY_CALCULATION_VERSION = "daily-entry-counts-v1"
+
+
 @dataclass(frozen=True)
 class SimEntry:
     entry_id: str
@@ -254,6 +257,7 @@ class WaymarkSimulation:
                 "start": start.isoformat(),
                 "end": end.isoformat(),
                 "timezone": timezone_name,
+                "calculation_version": SUMMARY_CALCULATION_VERSION,
                 "counts": summary,
             },
         )

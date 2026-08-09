@@ -43,6 +43,8 @@ entitlement, access decision, and daily metric summary.
     append duplicate entry facts.
 17. Operator inspection is a read-only projection containing enough lifecycle
     state to explain the current access decision.
+18. Daily summary observations identify their calculation version; the version
+    is projection metadata, not a durable business fact.
 
 ## Open questions
 
@@ -78,3 +80,6 @@ The entry identity slice is documented in
 
 The operator inspection read model is documented in
 `docs/slices/operator-inspection-read-model.md`.
+
+The summary versioning slice is documented in
+`docs/slices/summary-versioning.md`.

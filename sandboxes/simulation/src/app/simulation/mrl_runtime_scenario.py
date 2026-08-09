@@ -6,7 +6,7 @@ from mrl_simulation_runtime.actors import Actor
 from mrl_simulation_runtime.invariants import Invariant
 from mrl_simulation_runtime.scenario import InitialScheduledAction, Scenario
 
-from app.simulation.environment import WaymarkSimulation
+from app.simulation.environment import SUMMARY_CALCULATION_VERSION, WaymarkSimulation
 from app.simulation.ports import FakePaymentProvider
 
 
@@ -115,6 +115,16 @@ def create_simulation() -> Scenario:
             return True
         return summaries[-1].payload.get("timezone") == "America/Sao_Paulo"
 
+    def summary_version_recorded(context):
+        summaries = [
+            observation
+            for observation in context.observations.observations
+            if observation.type == "projection_result" and observation.name == "daily_entry_summary"
+        ]
+        if not summaries:
+            return True
+        return summaries[-1].payload.get("calculation_version") == SUMMARY_CALCULATION_VERSION
+
     def renewal_opens_new_period(context):
         if "EntitlementExpired" not in simulation.state.facts:
             return True
@@ -195,6 +205,7 @@ def create_simulation() -> Scenario:
             Invariant("operator_intervention_is_audited", intervention_audited),
             Invariant("operator_inspection_is_complete", operator_inspection_is_complete),
             Invariant("summary_timezone_is_recorded", summary_timezone_recorded),
+            Invariant("summary_version_is_recorded", summary_version_recorded),
             Invariant("renewal_opens_new_period", renewal_opens_new_period),
             Invariant("expired_interval_remains_closed", expired_interval_remains_closed),
             Invariant("event_replay_matches_live_state", replay_matches_live_state),
