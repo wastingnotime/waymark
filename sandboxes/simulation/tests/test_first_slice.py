@@ -37,3 +37,26 @@ def test_first_slice_restricts_at_exclusive_period_boundary():
     context.clock = type("Clock", (), {"now": lambda _: end})()
     simulation.expire(context)
     assert not simulation.access_check(context)
+
+
+def test_daily_summary_is_recomputed_from_entries():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    simulation.record_note(context, "one")
+    first = simulation.daily_summary(context, start, start + timedelta(days=7))
+    second = simulation.daily_summary(context, start, start + timedelta(days=7))
+    assert first == second == {"2026-09-01": 1}
+
+
+def test_cancellation_keeps_access_until_period_end():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    end = start + timedelta(days=7)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, end)
+    simulation.cancel(context)
+    assert simulation.access_check(context)

@@ -43,6 +43,9 @@ def create_simulation() -> Scenario:
     def log(context):
         simulation.record_log(context, "Payment recovered and access returned", context.clock.now())
 
+    def summary(context):
+        simulation.daily_summary(context, START, context.clock.now())
+
     def expire(context):
         simulation.expire(context)
 
@@ -50,6 +53,13 @@ def create_simulation() -> Scenario:
         if "PaymentFailed" not in simulation.state.facts:
             return True
         return 1 <= len(simulation.state.entries) <= 2 and simulation.state.facts.count("PaymentFailed") == 1
+
+    def cancellation_boundary(context):
+        if not simulation.state.cancelled:
+            return True
+        if simulation.state.expired:
+            return not simulation.state.access_allowed(context.clock.now())
+        return simulation.state.access_allowed(context.clock.now())
 
     return Scenario(
         name="waymark.subscription_backed_workspace",
@@ -65,8 +75,12 @@ def create_simulation() -> Scenario:
             action(timedelta(days=2, minutes=1), "restricted_write", restricted_write),
             action(timedelta(days=3), "payment_recovery", recover),
             action(timedelta(days=3, minutes=1), "record_log", log),
+            action(timedelta(days=3, minutes=2), "daily_summary", summary),
             action(timedelta(days=4), "schedule_cancellation", cancel),
             action(timedelta(days=7), "period_expiry", expire),
         ],
-        invariants=[Invariant("durable_entries_survive_payment_failure", invariant)],
+        invariants=[
+            Invariant("durable_entries_survive_payment_failure", invariant),
+            Invariant("cancellation_respects_paid_boundary", cancellation_boundary),
+        ],
     )

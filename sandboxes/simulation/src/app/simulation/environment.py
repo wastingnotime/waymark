@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from collections import Counter
 from uuid import UUID, uuid4
 
 
@@ -91,6 +92,22 @@ class WaymarkSimulation:
             payload={"allowed": allowed, "reason": "entitled" if allowed else self._restriction_reason()},
         )
         return allowed
+
+    def daily_summary(self, context: object, start: datetime, end: datetime) -> dict[str, int]:
+        """Project recorded facts without mutating the append-only history."""
+        counts: Counter[str] = Counter(
+            entry.recorded_at.date().isoformat()
+            for entry in self.state.entries
+            if start <= entry.recorded_at <= end
+        )
+        summary = dict(sorted(counts.items()))
+        context.emit(
+            "projection_result",
+            "daily_entry_summary",
+            source="Insights",
+            payload={"start": start.isoformat(), "end": end.isoformat(), "counts": summary},
+        )
+        return summary
 
     def _record(self, context: object, kind: str, body: str, happened_at: datetime) -> bool:
         if not self.access_check(context):
