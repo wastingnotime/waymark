@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from collections import Counter
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from app.simulation.events import SimFact
 from app.simulation.ports import DeterministicIds
 
@@ -153,10 +154,20 @@ class WaymarkSimulation:
         context.emit("operator_action", "entitlement_restored", source="Operations", payload={"actor": actor, "reason": reason})
         return True
 
-    def daily_summary(self, context: object, start: datetime, end: datetime) -> dict[str, int]:
+    def daily_summary(
+        self,
+        context: object,
+        start: datetime,
+        end: datetime,
+        timezone_name: str = "UTC",
+    ) -> dict[str, int]:
         """Project recorded facts without mutating the append-only history."""
+        try:
+            local_zone = ZoneInfo(timezone_name)
+        except ZoneInfoNotFoundError as exc:
+            raise ValueError(f"unknown timezone: {timezone_name}") from exc
         counts: Counter[str] = Counter(
-            entry.recorded_at.date().isoformat()
+            entry.recorded_at.astimezone(local_zone).date().isoformat()
             for entry in self.state.entries
             if start <= entry.recorded_at <= end
         )
@@ -165,7 +176,12 @@ class WaymarkSimulation:
             "projection_result",
             "daily_entry_summary",
             source="Insights",
-            payload={"start": start.isoformat(), "end": end.isoformat(), "counts": summary},
+            payload={
+                "start": start.isoformat(),
+                "end": end.isoformat(),
+                "timezone": timezone_name,
+                "counts": summary,
+            },
         )
         return summary
 

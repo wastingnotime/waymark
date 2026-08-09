@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from app.simulation.environment import WaymarkSimulation
 from app.simulation.ports import DeterministicIds, FakePaymentProvider
 
@@ -116,3 +118,28 @@ def test_recovery_after_operator_restore_is_idempotent():
     assert simulation.operator_restore(context, "support-operator", "verified payment manually")
     simulation.recover_payment(context)
     assert simulation.state.facts.count("EntitlementRestored") == 1
+
+
+def test_daily_summary_uses_the_requested_timezone_calendar():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    context.clock = type("Clock", (), {"now": lambda _: datetime(2026, 9, 2, 1, 30, tzinfo=timezone.utc)})()
+    simulation.record_note(context, "late in UTC")
+    summary = simulation.daily_summary(
+        context,
+        start,
+        start + timedelta(days=7),
+        "America/Sao_Paulo",
+    )
+    assert summary == {"2026-09-01": 1}
+
+
+def test_daily_summary_rejects_unknown_timezone():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    with pytest.raises(ValueError, match="unknown timezone"):
+        simulation.daily_summary(context, start, start, "Mars/Olympus")

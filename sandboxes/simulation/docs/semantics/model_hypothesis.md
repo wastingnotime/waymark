@@ -28,6 +28,8 @@ entitlement, access decision, and daily metric summary.
    enter through a deterministic fake boundary.
 10. Operator inspection is read-only; operator restoration is an explicit,
     attributed intervention over a suspended entitlement.
+11. Daily summaries group recorded instants by the caller's explicit IANA
+    timezone; entry facts remain timezone-neutral.
 
 ## Open questions
 
@@ -45,3 +47,6 @@ shared environment rather than creating separate simulations.
 
 The next selected slice is documented in
 `docs/slices/operator-inspection.md`.
+
+The timezone summary slice is documented in
+`docs/slices/timezone-summaries.md`.
