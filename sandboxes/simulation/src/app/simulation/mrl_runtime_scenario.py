@@ -109,6 +109,16 @@ def create_simulation() -> Scenario:
             return True
         return simulation.state.facts.count("EntitlementGranted") >= 2
 
+    def replay_matches_live_state(context):
+        replayed = WaymarkSimulation.replay(simulation.state.events)
+        return (
+            replayed.state.entries == simulation.state.entries
+            and replayed.state.payment_failed == simulation.state.payment_failed
+            and replayed.state.expired == simulation.state.expired
+            and replayed.state.period_start == simulation.state.period_start
+            and replayed.state.period_end == simulation.state.period_end
+        )
+
     return Scenario(
         name="waymark.subscription_backed_workspace",
         seed=20260901,
@@ -138,5 +148,6 @@ def create_simulation() -> Scenario:
             Invariant("summary_timezone_is_recorded", summary_timezone_recorded),
             Invariant("renewal_opens_new_period", renewal_opens_new_period),
             Invariant("expired_interval_remains_closed", expired_interval_remains_closed),
+            Invariant("event_replay_matches_live_state", replay_matches_live_state),
         ],
     )

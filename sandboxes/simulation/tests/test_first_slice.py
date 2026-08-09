@@ -193,3 +193,18 @@ def test_renewal_requires_a_positive_period():
     simulation.expire(context)
     with pytest.raises(ValueError, match="positive duration"):
         simulation.renew_period(context, start + timedelta(days=7), start + timedelta(days=7))
+
+
+def test_event_history_replays_to_the_same_state():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    end = start + timedelta(days=7)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, end)
+    simulation.record_note(context, "one")
+    simulation.fail_payment(context)
+    replayed = WaymarkSimulation.replay(simulation.state.events)
+    assert replayed.state.entries == simulation.state.entries
+    assert replayed.state.payment_failed == simulation.state.payment_failed
+    assert replayed.state.period_end == simulation.state.period_end

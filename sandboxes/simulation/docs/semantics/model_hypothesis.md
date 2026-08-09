@@ -32,6 +32,8 @@ entitlement, access decision, and daily metric summary.
     timezone; entry facts remain timezone-neutral.
 12. A successful payment after expiry creates a new entitlement period and does
     not reopen the expired interval.
+13. Live state can be rehydrated from the ordered fact history without emitting
+    new facts.
 
 ## Open questions
 
@@ -54,3 +56,5 @@ The timezone summary slice is documented in
 `docs/slices/timezone-summaries.md`.
 
 The renewal slice is documented in `docs/slices/renewal-after-expiry.md`.
+
+The replay slice is documented in `docs/slices/event-replay.md`.

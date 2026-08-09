@@ -57,6 +57,41 @@ class WaymarkSimulation:
     def _fact(self, name: str, occurred_at: datetime, **payload: object) -> None:
         self.state.events.append(SimFact(len(self.state.events), name, occurred_at, payload))
 
+    @classmethod
+    def replay(cls, events: list[SimFact]) -> "WaymarkSimulation":
+        """Rehydrate a fresh environment from append-only simulation facts."""
+        simulation = cls()
+        simulation.state.events = list(events)
+        for event in events:
+            if event.name == "AccountCreated":
+                simulation.state.user_id = str(event.payload["user_id"])
+            elif event.name == "WorkspaceCreated":
+                simulation.state.workspace_id = str(event.payload["workspace_id"])
+            elif event.name == "EntitlementGranted":
+                simulation.state.period_start = event.payload["period_start"]
+                simulation.state.period_end = event.payload["period_end"]
+                simulation.state.expired = False
+                simulation.state.payment_failed = False
+            elif event.name == "PaymentFailed":
+                simulation.state.payment_failed = True
+            elif event.name in {"EntitlementRestored", "OperatorInterventionRecorded"}:
+                simulation.state.payment_failed = False
+            elif event.name == "CancellationScheduled":
+                simulation.state.cancelled = True
+                simulation.state.cancellation_at = event.payload["effective_at"]
+            elif event.name == "EntitlementExpired":
+                simulation.state.expired = True
+            elif event.name in {"NoteRecorded", "LogEntryRecorded"}:
+                simulation.state.entries.append(
+                    SimEntry(
+                        str(event.payload["kind"]),
+                        str(event.payload["body"]),
+                        event.payload["happened_at"],
+                        event.payload["recorded_at"],
+                    )
+                )
+        return simulation
+
     def create_account(self, context: object) -> None:
         now = context.clock.now()
         self._fact("AccountCreated", now, user_id=str(self.state.user_id))
@@ -209,7 +244,14 @@ class WaymarkSimulation:
             context.emit("command_rejected", f"{kind}_rejected", source="Recording", payload={"reason": "restricted"})
             return False
         self.state.entries.append(SimEntry(kind, body, happened_at, context.clock.now()))
-        self._fact("NoteRecorded" if kind == "note" else "LogEntryRecorded", context.clock.now(), kind=kind)
+        self._fact(
+            "NoteRecorded" if kind == "note" else "LogEntryRecorded",
+            context.clock.now(),
+            kind=kind,
+            body=body,
+            happened_at=happened_at,
+            recorded_at=context.clock.now(),
+        )
         context.emit("domain_fact", f"{kind}_recorded", source="Recording")
         return True
 
