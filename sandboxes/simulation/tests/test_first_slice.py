@@ -21,6 +21,8 @@ def test_first_slice_preserves_facts_through_failure_and_recovery():
     simulation = WaymarkSimulation()
     simulation.create_account(context)
     assert simulation.state.payer_id == simulation.state.user_id
+    account_fact = next(event for event in simulation.state.events if event.name == "AccountCreated")
+    assert account_fact.payload["payer_id"] == simulation.state.payer_id
     simulation.activate_period(context, start, start + timedelta(days=7))
     assert simulation.record_note(context, "one")
     simulation.fail_payment(context)
