@@ -377,6 +377,21 @@ def test_cancellation_request_is_idempotent():
     assert any(event[0][1] == "duplicate_cancellation_ignored" for event in context.events)
 
 
+def test_expiry_job_is_idempotent():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    end = start + timedelta(days=7)
+    context = Context(end)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, end)
+    simulation.expire(context)
+    event_count = len(simulation.state.events)
+    simulation.expire(context)
+    assert len(simulation.state.events) == event_count
+    assert simulation.state.facts.count("EntitlementExpired") == 1
+    assert any(event[0][1] == "duplicate_expiry_ignored" for event in context.events)
+
+
 def test_replay_clears_old_cancellation_when_a_new_period_is_granted():
     start = datetime(2026, 9, 1, tzinfo=timezone.utc)
     end = start + timedelta(days=7)

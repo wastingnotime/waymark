@@ -218,6 +218,9 @@ class WaymarkSimulation:
         )
 
     def expire(self, context: object) -> None:
+        if self.state.expired:
+            context.emit("access_notice", "duplicate_expiry_ignored", source="Access")
+            return
         self.state.expired = True
         self._fact("EntitlementExpired", context.clock.now())
         context.emit("domain_fact", "entitlement_expired", source="Access")

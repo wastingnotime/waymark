@@ -84,6 +84,9 @@ def create_simulation() -> Scenario:
     def expire(context):
         simulation.expire(context)
 
+    def duplicate_expire(context):
+        simulation.expire(context)
+
     def renew(context):
         simulation.renew_period(context, end, end + timedelta(days=7), "renewal-period-2")
 
@@ -229,6 +232,15 @@ def create_simulation() -> Scenario:
             for observation in context.observations.observations
         )
 
+    def expiry_job_is_unique(context):
+        duplicate_at = START + timedelta(days=7, seconds=10)
+        if context.clock.now() < duplicate_at:
+            return True
+        return simulation.state.facts.count("EntitlementExpired") == 1 and any(
+            observation.name == "duplicate_expiry_ignored"
+            for observation in context.observations.observations
+        )
+
     def duplicate_failure_is_observed(context):
         duplicate_at = START + timedelta(days=2, seconds=30)
         if context.clock.now() < duplicate_at:
@@ -273,6 +285,7 @@ def create_simulation() -> Scenario:
             action(timedelta(days=4), "schedule_cancellation", cancel),
             action(timedelta(days=4, seconds=10), "duplicate_cancellation", duplicate_cancel),
             action(timedelta(days=7), "period_expiry", expire),
+            action(timedelta(days=7, seconds=10), "duplicate_period_expiry", duplicate_expire),
             action(timedelta(days=8), "renew_after_expiry", renew),
             action(timedelta(days=8, minutes=1), "record_post_renewal_log", post_renewal_log),
         ],
@@ -295,5 +308,6 @@ def create_simulation() -> Scenario:
             Invariant("account_bootstrap_is_unique", account_bootstrap_is_unique),
             Invariant("subscription_request_is_unique", subscription_request_is_unique),
             Invariant("cancellation_request_is_unique", cancellation_request_is_unique),
+            Invariant("expiry_job_is_unique", expiry_job_is_unique),
         ],
     )

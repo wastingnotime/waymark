@@ -57,6 +57,8 @@ entitlement, access decision, and daily metric summary.
     one paid-period boundary.
 24. Operator restoration is idempotent after the entitlement is already
     restored, with duplicate attempts observable and non-mutating.
+25. Expiry processing is idempotent for a current entitlement interval and keeps
+    access restricted after repeated jobs.
 
 ## Open questions
 
@@ -113,3 +115,6 @@ The cancellation idempotency slice is documented in
 
 The operator intervention idempotency slice is documented in
 `docs/slices/operator-intervention-idempotency.md`.
+
+The expiry idempotency slice is documented in
+`docs/slices/expiry-idempotency.md`.
