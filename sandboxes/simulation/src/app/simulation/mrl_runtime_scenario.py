@@ -240,6 +240,13 @@ def create_simulation() -> Scenario:
             for observation in context.observations.observations
         )
 
+    def subscription_ownership_is_explicit(context):
+        requests = [event for event in simulation.state.events if event.name == "SubscriptionRequested"]
+        if not requests:
+            return True
+        payload = requests[0].payload
+        return payload.get("user_id") == simulation.state.user_id and payload.get("payer_id") == simulation.state.payer_id
+
     def cancellation_request_is_unique(context):
         duplicate_at = START + timedelta(days=4, seconds=10)
         if context.clock.now() < duplicate_at:
@@ -329,6 +336,7 @@ def create_simulation() -> Scenario:
             Invariant("payer_identity_is_explicit", payer_identity_is_explicit),
             Invariant("pre_entitlement_is_restricted", pre_entitlement_is_restricted),
             Invariant("subscription_request_is_unique", subscription_request_is_unique),
+            Invariant("subscription_ownership_is_explicit", subscription_ownership_is_explicit),
             Invariant("cancellation_request_is_unique", cancellation_request_is_unique),
             Invariant("expiry_job_is_unique", expiry_job_is_unique),
         ],

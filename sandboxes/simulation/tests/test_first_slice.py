@@ -389,8 +389,11 @@ def test_subscription_request_is_idempotent():
     simulation.create_account(context)
     simulation.request_subscription(context, "subscription-1")
     simulation.request_subscription(context, "subscription-1")
+    request = next(event for event in simulation.state.events if event.name == "SubscriptionRequested")
     assert simulation.state.facts.count("SubscriptionRequested") == 1
     assert simulation.state.subscription_id == "subscription-1"
+    assert request.payload["user_id"] == simulation.state.user_id
+    assert request.payload["payer_id"] == simulation.state.payer_id
 
 
 def test_cancellation_request_is_idempotent():

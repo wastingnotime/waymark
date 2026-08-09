@@ -65,6 +65,8 @@ entitlement, access decision, and daily metric summary.
     effective period.
 28. The first-version payer is explicitly represented and equals the user while
     retaining a separate billing role.
+29. The subscription request fact explicitly links subscription, user, and
+    payer identities.
 
 ## Open questions
 
@@ -133,3 +135,6 @@ The period overlap slice is documented in
 
 The payer identity slice is documented in
 `docs/slices/payer-identity.md`.
+
+The subscription ownership slice is documented in
+`docs/slices/subscription-ownership.md`.

@@ -133,7 +133,13 @@ class WaymarkSimulation:
                 return
             raise ValueError("a current subscription already exists")
         self.state.subscription_id = subscription_id
-        self._fact("SubscriptionRequested", context.clock.now(), subscription_id=subscription_id)
+        self._fact(
+            "SubscriptionRequested",
+            context.clock.now(),
+            subscription_id=subscription_id,
+            user_id=self.state.user_id,
+            payer_id=self.state.payer_id,
+        )
         context.emit("domain_fact", "subscription_requested", source="Billing")
 
     def activate_period(self, context: object, start: datetime, end: datetime, payment_id: str | None = None) -> None:
