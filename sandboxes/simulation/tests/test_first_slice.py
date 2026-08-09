@@ -111,8 +111,10 @@ def test_operator_can_inspect_and_restore_a_suspended_entitlement():
     assert simulation.operator_restore(context, "support-operator", "verified payment manually")
     assert simulation.access_check(context)
     assert simulation.state.facts.count("OperatorInterventionRecorded") == 1
+    event_count = len(simulation.state.events)
     assert not simulation.operator_restore(context, "support-operator", "verified payment manually")
     assert simulation.state.facts.count("OperatorInterventionRecorded") == 1
+    assert len(simulation.state.events) == event_count
 
 
 def test_recovery_after_operator_restore_is_idempotent():
