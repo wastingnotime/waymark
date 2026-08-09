@@ -67,8 +67,10 @@ class WaymarkSimulation:
         for event in events:
             if event.name == "AccountCreated":
                 simulation.state.user_id = str(event.payload["user_id"])
+                simulation.ids.reserve(simulation.state.user_id)
             elif event.name == "WorkspaceCreated":
                 simulation.state.workspace_id = str(event.payload["workspace_id"])
+                simulation.ids.reserve(simulation.state.workspace_id)
             elif event.name == "EntitlementGranted":
                 simulation.state.period_start = event.payload["period_start"]
                 simulation.state.period_end = event.payload["period_end"]
@@ -98,6 +100,7 @@ class WaymarkSimulation:
                         event.payload["recorded_at"],
                     )
                 )
+                simulation.ids.reserve(str(event.payload["entry_id"]))
         return simulation
 
     def create_account(self, context: object) -> None:
@@ -259,7 +262,15 @@ class WaymarkSimulation:
         if entry_id:
             existing = next((entry for entry in self.state.entries if entry.entry_id == entry_id), None)
             if existing:
-                return existing.kind == kind and existing.body == body
+                if existing.kind == kind and existing.body == body:
+                    return True
+                context.emit(
+                    "command_rejected",
+                    f"{kind}_rejected",
+                    source="Recording",
+                    payload={"reason": "conflicting_entry_retry", "entry_id": entry_id},
+                )
+                return False
         entry_id = entry_id or self.ids.new("entry")
         recorded_at = context.clock.now()
         self.state.entries.append(SimEntry(entry_id, kind, body, happened_at, recorded_at))

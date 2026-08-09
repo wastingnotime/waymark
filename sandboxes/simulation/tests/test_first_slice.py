@@ -268,6 +268,21 @@ def test_entry_identity_makes_retried_writes_idempotent():
     assert len(simulation.state.entries) == 1
 
 
+def test_replay_advances_generated_entry_ids_without_collision():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    simulation.record_note(context, "first")
+    replayed = WaymarkSimulation.replay(simulation.state.events)
+    replayed.record_note(context, "second")
+    assert [entry.entry_id for entry in replayed.state.entries] == [
+        "waymark-entry-0003",
+        "waymark-entry-0004",
+    ]
+
+
 def test_replay_clears_old_cancellation_when_a_new_period_is_granted():
     start = datetime(2026, 9, 1, tzinfo=timezone.utc)
     end = start + timedelta(days=7)

@@ -12,6 +12,11 @@ class DeterministicIds:
         self._next += 1
         return f"{self.prefix}-{kind}-{self._next:04d}"
 
+    def reserve(self, identifier: str) -> None:
+        prefix, _, suffix = identifier.rpartition("-")
+        if prefix.startswith(f"{self.prefix}-") and suffix.isdigit():
+            self._next = max(self._next, int(suffix))
+
 
 class FakePaymentProvider:
     """Provider boundary with replay-safe, explicit outcomes."""
