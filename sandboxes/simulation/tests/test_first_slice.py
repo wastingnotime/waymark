@@ -306,9 +306,13 @@ def test_account_bootstrap_is_idempotent():
     context = Context(datetime(2026, 9, 1, tzinfo=timezone.utc))
     simulation = WaymarkSimulation()
     simulation.create_account(context)
+    identities = (simulation.state.user_id, simulation.state.workspace_id)
+    events = list(simulation.state.events)
     simulation.create_account(context)
     assert simulation.state.facts.count("AccountCreated") == 1
     assert simulation.state.facts.count("WorkspaceCreated") == 1
+    assert (simulation.state.user_id, simulation.state.workspace_id) == identities
+    assert simulation.state.events == events
     assert any(event[0][1] == "duplicate_account_creation_ignored" for event in context.events)
 
 
