@@ -55,7 +55,7 @@ def create_simulation() -> Scenario:
         simulation.record_log(context, "Payment recovered and access returned", context.clock.now())
 
     def summary(context):
-        simulation.daily_summary(context, START, context.clock.now())
+        simulation.daily_summary(context, START, context.clock.now(), "America/Sao_Paulo")
 
     def expire(context):
         simulation.expire(context)
@@ -78,6 +78,16 @@ def create_simulation() -> Scenario:
         if "OperatorInterventionRecorded" not in simulation.state.facts:
             return True
         return "EntitlementRestored" in simulation.state.facts and not simulation.state.payment_failed
+
+    def summary_timezone_recorded(context):
+        summaries = [
+            observation
+            for observation in context.observations.observations
+            if observation.type == "projection_result" and observation.name == "daily_entry_summary"
+        ]
+        if not summaries:
+            return True
+        return summaries[-1].payload.get("timezone") == "America/Sao_Paulo"
 
     return Scenario(
         name="waymark.subscription_backed_workspace",
@@ -103,5 +113,6 @@ def create_simulation() -> Scenario:
             Invariant("durable_entries_survive_payment_failure", invariant),
             Invariant("cancellation_respects_paid_boundary", cancellation_boundary),
             Invariant("operator_intervention_is_audited", intervention_audited),
+            Invariant("summary_timezone_is_recorded", summary_timezone_recorded),
         ],
     )

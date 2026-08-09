@@ -143,3 +143,16 @@ def test_daily_summary_rejects_unknown_timezone():
     simulation = WaymarkSimulation()
     with pytest.raises(ValueError, match="unknown timezone"):
         simulation.daily_summary(context, start, start, "Mars/Olympus")
+
+
+def test_summary_observation_records_timezone_without_mutating_events():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    simulation.record_note(context, "one")
+    event_count = len(simulation.state.events)
+    simulation.daily_summary(context, start, start + timedelta(days=7), "America/Sao_Paulo")
+    assert len(simulation.state.events) == event_count
+    assert context.events[-1][1]["payload"]["timezone"] == "America/Sao_Paulo"
