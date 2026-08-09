@@ -38,6 +38,9 @@ def create_simulation() -> Scenario:
     def restricted_write(context):
         simulation.record_log(context, "This write should be rejected", context.clock.now())
 
+    def inspect(context):
+        simulation.operator_inspect(context, "support-operator")
+
     def recover(context):
         payments.succeed("renewal-1-recovered")
         simulation.recover_payment(context)
@@ -80,6 +83,7 @@ def create_simulation() -> Scenario:
             action(timedelta(hours=1), "record_note", note),
             action(timedelta(days=2), "payment_failure", fail),
             action(timedelta(days=2, minutes=1), "restricted_write", restricted_write),
+            action(timedelta(days=2, minutes=2), "operator_inspection", inspect),
             action(timedelta(days=3), "payment_recovery", recover),
             action(timedelta(days=3, minutes=1), "record_log", log),
             action(timedelta(days=3, minutes=2), "daily_summary", summary),

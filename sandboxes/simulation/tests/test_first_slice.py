@@ -90,3 +90,17 @@ def test_event_history_and_provider_outcomes_are_deterministic():
         "EntitlementGranted",
     ]
     assert provider.outcomes == {"initial": "succeeded"}
+
+
+def test_operator_can_inspect_and_restore_a_suspended_entitlement():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    simulation.fail_payment(context)
+    inspection = simulation.operator_inspect(context, "support-operator")
+    assert inspection["reason"] == "payment_failed"
+    assert simulation.operator_restore(context, "support-operator", "verified payment manually")
+    assert simulation.access_check(context)
+    assert simulation.state.facts.count("OperatorInterventionRecorded") == 1

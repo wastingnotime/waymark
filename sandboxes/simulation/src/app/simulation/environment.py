@@ -119,6 +119,32 @@ class WaymarkSimulation:
         )
         return allowed
 
+    def operator_inspect(self, context: object, actor: str) -> dict[str, object]:
+        if not actor.strip():
+            raise ValueError("operator actor is required")
+        decision = self.state.access_allowed(context.clock.now())
+        inspection = {
+            "actor": actor,
+            "user_id": self.state.user_id,
+            "workspace_id": self.state.workspace_id,
+            "access_allowed": decision,
+            "reason": "entitled" if decision else self._restriction_reason(),
+            "entry_count": len(self.state.entries),
+        }
+        context.emit("operator_observation", "account_inspected", source="Operations", payload=inspection)
+        return inspection
+
+    def operator_restore(self, context: object, actor: str, reason: str) -> bool:
+        if not actor.strip() or not reason.strip():
+            raise ValueError("operator actor and reason are required")
+        if not self.state.payment_failed:
+            return False
+        self.state.payment_failed = False
+        self._fact("OperatorInterventionRecorded", context.clock.now(), actor=actor, reason=reason)
+        self._fact("EntitlementRestored", context.clock.now(), source="operator")
+        context.emit("operator_action", "entitlement_restored", source="Operations", payload={"actor": actor, "reason": reason})
+        return True
+
     def daily_summary(self, context: object, start: datetime, end: datetime) -> dict[str, int]:
         """Project recorded facts without mutating the append-only history."""
         counts: Counter[str] = Counter(

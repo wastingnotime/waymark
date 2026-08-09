@@ -26,6 +26,8 @@ entitlement, access decision, and daily metric summary.
 8. Daily summaries are recomputable projections, not facts.
 9. Simulation facts are append-only, ordered, and replayable; provider outcomes
    enter through a deterministic fake boundary.
+10. Operator inspection is read-only; operator restoration is an explicit,
+    attributed intervention over a suspended entitlement.
 
 ## Open questions
 
@@ -40,3 +42,6 @@ entitlement, access decision, and daily metric summary.
 The first selected slice is documented in
 `docs/slices/subscription-backed-workspace.md`. Further slices must extend this
 shared environment rather than creating separate simulations.
+
+The next selected slice is documented in
+`docs/slices/operator-inspection.md`.
