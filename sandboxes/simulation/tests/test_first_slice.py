@@ -242,6 +242,18 @@ def test_log_preserves_happened_at_separately_from_recorded_at():
     assert log.recorded_at == recorded
 
 
+def test_daily_summary_groups_a_log_by_recorded_time_not_activity_time():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    recorded = start + timedelta(days=2)
+    context = Context(recorded)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    simulation.record_log(context, "activity happened earlier", start)
+    summary = simulation.daily_summary(context, start, start + timedelta(days=7), "UTC")
+    assert summary == {"2026-09-03": 1}
+
+
 def test_replay_clears_old_cancellation_when_a_new_period_is_granted():
     start = datetime(2026, 9, 1, tzinfo=timezone.utc)
     end = start + timedelta(days=7)
