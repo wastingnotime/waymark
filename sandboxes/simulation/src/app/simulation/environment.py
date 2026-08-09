@@ -138,6 +138,10 @@ class WaymarkSimulation:
             return
         if self.state.subscription_id is None:
             self.request_subscription(context, "subscription-implicit")
+        if self.state.period_start is not None and self.state.period_end is not None and start < self.state.period_end:
+            raise ValueError("activation period overlaps the current entitlement")
+        if end <= start:
+            raise ValueError("activation period must have a positive duration")
         self.state.period_start, self.state.period_end = start, end
         self.state.payment_failed = False
         self.state.expired = False

@@ -61,6 +61,8 @@ entitlement, access decision, and daily metric summary.
     access restricted after repeated jobs.
 26. Account creation without an effective entitlement yields restricted access
     with reason `no_entitlement`.
+27. Entitlement activation periods are positive and cannot overlap the current
+    effective period.
 
 ## Open questions
 
@@ -123,3 +125,6 @@ The expiry idempotency slice is documented in
 
 The pre-entitlement access slice is documented in
 `docs/slices/pre-entitlement-access.md`.
+
+The period overlap slice is documented in
+`docs/slices/period-overlap.md`.

@@ -254,6 +254,16 @@ def test_duplicate_payment_success_does_not_append_facts():
     assert any(event[0][1] == "duplicate_payment_success_ignored" for event in context.events)
 
 
+def test_activation_rejects_an_overlapping_period():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7), "payment-1")
+    with pytest.raises(ValueError, match="overlaps"):
+        simulation.activate_period(context, start + timedelta(days=1), start + timedelta(days=8), "payment-2")
+
+
 def test_duplicate_renewal_success_does_not_reopen_or_duplicate_period():
     start = datetime(2026, 9, 1, tzinfo=timezone.utc)
     end = start + timedelta(days=7)
