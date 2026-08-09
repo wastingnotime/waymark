@@ -357,6 +357,8 @@ def test_access_is_restricted_before_entitlement():
     simulation.create_account(context)
     assert not simulation.access_check(context)
     assert context.events[-1][1]["payload"]["reason"] == "no_entitlement"
+    assert not simulation.record_note(context, "should not be stored")
+    assert simulation.state.entries == []
 
 
 def test_subscription_request_is_idempotent():
