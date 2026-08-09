@@ -49,6 +49,8 @@ entitlement, access decision, and daily metric summary.
     receive an explanatory rejection without domain mutation.
 20. Account bootstrap is idempotent and cannot create a second user or private
     workspace in the first version.
+21. The user requests one current subscription before payment activation; a
+    duplicate same-identity request is idempotent.
 
 ## Open questions
 
@@ -93,3 +95,6 @@ The workspace ownership slice is documented in
 
 The account bootstrap slice is documented in
 `docs/slices/account-bootstrap.md`.
+
+The subscription request slice is documented in
+`docs/slices/subscription-request.md`.

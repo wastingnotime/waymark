@@ -27,6 +27,9 @@ def create_simulation() -> Scenario:
     def duplicate_create(context):
         simulation.create_account(context)
 
+    def subscribe(context):
+        simulation.request_subscription(context, "subscription-1")
+
     def activate(context):
         payments.succeed("initial-period")
         simulation.activate_period(context, START, end)
@@ -153,6 +156,7 @@ def create_simulation() -> Scenario:
             and replayed.state.expired == simulation.state.expired
             and replayed.state.period_start == simulation.state.period_start
             and replayed.state.period_end == simulation.state.period_end
+            and replayed.state.subscription_id == simulation.state.subscription_id
             and replayed.state.cancelled == simulation.state.cancelled
             and replayed.state.cancellation_at == simulation.state.cancellation_at
             and replayed.state.processed_payment_ids == simulation.state.processed_payment_ids
@@ -189,6 +193,15 @@ def create_simulation() -> Scenario:
             for observation in context.observations.observations
         )
 
+    def subscription_request_is_unique(context):
+        duplicate_at = START + timedelta(minutes=1, seconds=50)
+        if context.clock.now() < duplicate_at:
+            return True
+        return simulation.state.facts.count("SubscriptionRequested") == 1 and any(
+            observation.name == "duplicate_subscription_request_ignored"
+            for observation in context.observations.observations
+        )
+
     def duplicate_failure_is_observed(context):
         duplicate_at = START + timedelta(days=2, seconds=30)
         if context.clock.now() < duplicate_at:
@@ -207,6 +220,8 @@ def create_simulation() -> Scenario:
         scheduled_actions=[
             action(timedelta(minutes=1), "create_account", create),
             action(timedelta(minutes=1, seconds=30), "duplicate_create_account", duplicate_create),
+            action(timedelta(minutes=1, seconds=45), "request_subscription", subscribe),
+            action(timedelta(minutes=1, seconds=50), "duplicate_subscription", subscribe),
             action(timedelta(minutes=2), "activate_period", activate),
             action(timedelta(hours=1), "record_note", note),
             action(timedelta(hours=1, minutes=1), "record_retried_note", retried_note),
@@ -240,5 +255,6 @@ def create_simulation() -> Scenario:
             Invariant("entry_ids_are_unique", entry_ids_are_unique),
             Invariant("private_workspace_is_owner_only", private_workspace_is_owner_only),
             Invariant("account_bootstrap_is_unique", account_bootstrap_is_unique),
+            Invariant("subscription_request_is_unique", subscription_request_is_unique),
         ],
     )

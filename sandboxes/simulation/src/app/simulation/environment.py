@@ -26,6 +26,7 @@ class SimEntry:
 class SimState:
     user_id: str
     workspace_id: str
+    subscription_id: str | None = None
     period_start: datetime | None = None
     period_end: datetime | None = None
     payment_failed: bool = False
@@ -74,6 +75,8 @@ class WaymarkSimulation:
             elif event.name == "WorkspaceCreated":
                 simulation.state.workspace_id = str(event.payload["workspace_id"])
                 simulation.ids.reserve(simulation.state.workspace_id)
+            elif event.name == "SubscriptionRequested":
+                simulation.state.subscription_id = str(event.payload["subscription_id"])
             elif event.name == "EntitlementGranted":
                 simulation.state.period_start = event.payload["period_start"]
                 simulation.state.period_end = event.payload["period_end"]
@@ -114,6 +117,16 @@ class WaymarkSimulation:
         self._fact("AccountCreated", now, user_id=str(self.state.user_id))
         self._fact("WorkspaceCreated", now, workspace_id=str(self.state.workspace_id))
         context.emit("domain_fact", "account_created", source="WaymarkSimulation")
+
+    def request_subscription(self, context: object, subscription_id: str) -> None:
+        if self.state.subscription_id is not None:
+            if self.state.subscription_id == subscription_id:
+                context.emit("subscription_notice", "duplicate_subscription_request_ignored", source="Billing")
+                return
+            raise ValueError("a current subscription already exists")
+        self.state.subscription_id = subscription_id
+        self._fact("SubscriptionRequested", context.clock.now(), subscription_id=subscription_id)
+        context.emit("domain_fact", "subscription_requested", source="Billing")
 
     def activate_period(self, context: object, start: datetime, end: datetime) -> None:
         self.state.period_start, self.state.period_end = start, end
