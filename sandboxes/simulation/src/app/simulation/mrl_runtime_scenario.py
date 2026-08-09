@@ -41,6 +41,9 @@ def create_simulation() -> Scenario:
     def inspect(context):
         simulation.operator_inspect(context, "support-operator")
 
+    def operator_restore(context):
+        simulation.operator_restore(context, "support-operator", "verified payment manually")
+
     def recover(context):
         payments.succeed("renewal-1-recovered")
         simulation.recover_payment(context)
@@ -71,6 +74,11 @@ def create_simulation() -> Scenario:
             return not simulation.state.access_allowed(context.clock.now())
         return simulation.state.access_allowed(context.clock.now())
 
+    def intervention_audited(context):
+        if "OperatorInterventionRecorded" not in simulation.state.facts:
+            return True
+        return "EntitlementRestored" in simulation.state.facts and not simulation.state.payment_failed
+
     return Scenario(
         name="waymark.subscription_backed_workspace",
         seed=20260901,
@@ -84,6 +92,7 @@ def create_simulation() -> Scenario:
             action(timedelta(days=2), "payment_failure", fail),
             action(timedelta(days=2, minutes=1), "restricted_write", restricted_write),
             action(timedelta(days=2, minutes=2), "operator_inspection", inspect),
+            action(timedelta(days=2, minutes=3), "operator_restore", operator_restore),
             action(timedelta(days=3), "payment_recovery", recover),
             action(timedelta(days=3, minutes=1), "record_log", log),
             action(timedelta(days=3, minutes=2), "daily_summary", summary),
@@ -93,5 +102,6 @@ def create_simulation() -> Scenario:
         invariants=[
             Invariant("durable_entries_survive_payment_failure", invariant),
             Invariant("cancellation_respects_paid_boundary", cancellation_boundary),
+            Invariant("operator_intervention_is_audited", intervention_audited),
         ],
     )

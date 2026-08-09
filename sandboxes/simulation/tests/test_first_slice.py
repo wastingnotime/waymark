@@ -104,3 +104,15 @@ def test_operator_can_inspect_and_restore_a_suspended_entitlement():
     assert simulation.operator_restore(context, "support-operator", "verified payment manually")
     assert simulation.access_check(context)
     assert simulation.state.facts.count("OperatorInterventionRecorded") == 1
+
+
+def test_recovery_after_operator_restore_is_idempotent():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    simulation.fail_payment(context)
+    assert simulation.operator_restore(context, "support-operator", "verified payment manually")
+    simulation.recover_payment(context)
+    assert simulation.state.facts.count("EntitlementRestored") == 1

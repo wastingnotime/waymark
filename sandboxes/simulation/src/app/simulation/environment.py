@@ -84,6 +84,14 @@ class WaymarkSimulation:
         context.emit("access_changed", "workspace_restricted", source="Access", payload={"reason": "payment_failed"})
 
     def recover_payment(self, context: object) -> None:
+        if not self.state.payment_failed:
+            context.emit(
+                "payment_notice",
+                "payment_recovery_already_resolved",
+                source="PaymentProvider",
+                payload={"reason": "entitlement_already_restored"},
+            )
+            return
         self.state.payment_failed = False
         self._fact("PaymentSucceeded", context.clock.now())
         self._fact("EntitlementRestored", context.clock.now())
