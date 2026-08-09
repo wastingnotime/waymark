@@ -161,6 +161,8 @@ def test_summary_observation_records_timezone_without_mutating_events():
     assert len(simulation.state.events) == event_count
     assert context.events[-1][1]["payload"]["timezone"] == "America/Sao_Paulo"
     assert context.events[-1][1]["payload"]["calculation_version"] == SUMMARY_CALCULATION_VERSION
+    simulation.daily_summary(context, start, start + timedelta(days=7), "America/Sao_Paulo")
+    assert context.events[-1][1]["payload"]["calculation_version"] == SUMMARY_CALCULATION_VERSION
 
 
 def test_renewal_after_expiry_opens_a_new_period():
