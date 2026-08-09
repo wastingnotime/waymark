@@ -296,6 +296,7 @@ def test_private_workspace_rejects_another_user():
     simulation = WaymarkSimulation()
     simulation.create_account(context)
     simulation.activate_period(context, start, start + timedelta(days=7))
+    assert not simulation.access_check(context, user_id="other-user")
     assert not simulation.record_note(context, "private", user_id="other-user")
     assert simulation.state.entries == []
     assert context.events[-1][1]["payload"]["reason"] == "unauthorized_user"
