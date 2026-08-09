@@ -30,6 +30,8 @@ entitlement, access decision, and daily metric summary.
     attributed intervention over a suspended entitlement.
 11. Daily summaries group recorded instants by the caller's explicit IANA
     timezone; entry facts remain timezone-neutral.
+12. A successful payment after expiry creates a new entitlement period and does
+    not reopen the expired interval.
 
 ## Open questions
 
@@ -50,3 +52,5 @@ The next selected slice is documented in
 
 The timezone summary slice is documented in
 `docs/slices/timezone-summaries.md`.
+
+The renewal slice is documented in `docs/slices/renewal-after-expiry.md`.

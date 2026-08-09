@@ -60,10 +60,16 @@ def create_simulation() -> Scenario:
     def expire(context):
         simulation.expire(context)
 
+    def renew(context):
+        simulation.renew_period(context, end, end + timedelta(days=7))
+
+    def post_renewal_log(context):
+        simulation.record_log(context, "A new paid period began", context.clock.now())
+
     def invariant(context):
         if "PaymentFailed" not in simulation.state.facts:
             return True
-        return 1 <= len(simulation.state.entries) <= 2 and simulation.state.facts.count("PaymentFailed") == 1
+        return len(simulation.state.entries) >= 1 and simulation.state.facts.count("PaymentFailed") == 1
 
     def cancellation_boundary(context):
         if not simulation.state.cancelled:
@@ -89,6 +95,13 @@ def create_simulation() -> Scenario:
             return True
         return summaries[-1].payload.get("timezone") == "America/Sao_Paulo"
 
+    def renewal_opens_new_period(context):
+        if "EntitlementExpired" not in simulation.state.facts:
+            return True
+        if simulation.state.expired:
+            return True
+        return simulation.state.period_start == end and not simulation.state.expired
+
     return Scenario(
         name="waymark.subscription_backed_workspace",
         seed=20260901,
@@ -108,11 +121,14 @@ def create_simulation() -> Scenario:
             action(timedelta(days=3, minutes=2), "daily_summary", summary),
             action(timedelta(days=4), "schedule_cancellation", cancel),
             action(timedelta(days=7), "period_expiry", expire),
+            action(timedelta(days=8), "renew_after_expiry", renew),
+            action(timedelta(days=8, minutes=1), "record_post_renewal_log", post_renewal_log),
         ],
         invariants=[
             Invariant("durable_entries_survive_payment_failure", invariant),
             Invariant("cancellation_respects_paid_boundary", cancellation_boundary),
             Invariant("operator_intervention_is_audited", intervention_audited),
             Invariant("summary_timezone_is_recorded", summary_timezone_recorded),
+            Invariant("renewal_opens_new_period", renewal_opens_new_period),
         ],
     )

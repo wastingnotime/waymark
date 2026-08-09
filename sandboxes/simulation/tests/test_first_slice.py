@@ -156,3 +156,29 @@ def test_summary_observation_records_timezone_without_mutating_events():
     simulation.daily_summary(context, start, start + timedelta(days=7), "America/Sao_Paulo")
     assert len(simulation.state.events) == event_count
     assert context.events[-1][1]["payload"]["timezone"] == "America/Sao_Paulo"
+
+
+def test_renewal_after_expiry_opens_a_new_period():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    end = start + timedelta(days=7)
+    context = Context(end)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, end)
+    simulation.expire(context)
+    assert not simulation.access_check(context)
+    new_end = end + timedelta(days=7)
+    simulation.renew_period(context, end, new_end)
+    assert simulation.state.period_start == end
+    assert simulation.access_check(context)
+    assert simulation.state.facts.count("EntitlementGranted") == 2
+
+
+def test_renewal_requires_expiry():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    with pytest.raises(ValueError, match="expired entitlement"):
+        simulation.renew_period(context, start + timedelta(days=7), start + timedelta(days=14))

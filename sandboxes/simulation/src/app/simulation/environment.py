@@ -72,6 +72,20 @@ class WaymarkSimulation:
         context.emit("domain_fact", "payment_succeeded", source="Billing")
         context.emit("domain_fact", "entitlement_granted", source="Access")
 
+    def renew_period(self, context: object, start: datetime, end: datetime) -> None:
+        """Open a new paid period after expiry; never reopen the old interval."""
+        if not self.state.expired:
+            raise ValueError("renewal period requires an expired entitlement")
+        self.state.period_start, self.state.period_end = start, end
+        self.state.payment_failed = False
+        self.state.expired = False
+        self.state.cancelled = False
+        self.state.cancellation_at = None
+        self._fact("PaymentSucceeded", context.clock.now(), period_start=start, period_end=end)
+        self._fact("EntitlementGranted", context.clock.now(), period_start=start, period_end=end)
+        context.emit("domain_fact", "payment_succeeded", source="Billing")
+        context.emit("domain_fact", "new_entitlement_granted", source="Access")
+
     def record_note(self, context: object, body: str) -> bool:
         return self._record(context, "note", body, context.clock.now())
 
