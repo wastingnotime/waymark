@@ -182,3 +182,14 @@ def test_renewal_requires_expiry():
     simulation.activate_period(context, start, start + timedelta(days=7))
     with pytest.raises(ValueError, match="expired entitlement"):
         simulation.renew_period(context, start + timedelta(days=7), start + timedelta(days=14))
+
+
+def test_renewal_requires_a_positive_period():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    simulation.expire(context)
+    with pytest.raises(ValueError, match="positive duration"):
+        simulation.renew_period(context, start + timedelta(days=7), start + timedelta(days=7))

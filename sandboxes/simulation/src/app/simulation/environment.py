@@ -76,6 +76,8 @@ class WaymarkSimulation:
         """Open a new paid period after expiry; never reopen the old interval."""
         if not self.state.expired:
             raise ValueError("renewal period requires an expired entitlement")
+        if end <= start:
+            raise ValueError("renewal period must have a positive duration")
         self.state.period_start, self.state.period_end = start, end
         self.state.payment_failed = False
         self.state.expired = False

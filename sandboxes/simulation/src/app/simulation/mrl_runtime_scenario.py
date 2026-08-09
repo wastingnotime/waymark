@@ -102,6 +102,13 @@ def create_simulation() -> Scenario:
             return True
         return simulation.state.period_start == end and not simulation.state.expired
 
+    def expired_interval_remains_closed(context):
+        if "EntitlementExpired" not in simulation.state.facts:
+            return True
+        if simulation.state.period_start != end:
+            return True
+        return simulation.state.facts.count("EntitlementGranted") >= 2
+
     return Scenario(
         name="waymark.subscription_backed_workspace",
         seed=20260901,
@@ -130,5 +137,6 @@ def create_simulation() -> Scenario:
             Invariant("operator_intervention_is_audited", intervention_audited),
             Invariant("summary_timezone_is_recorded", summary_timezone_recorded),
             Invariant("renewal_opens_new_period", renewal_opens_new_period),
+            Invariant("expired_interval_remains_closed", expired_interval_remains_closed),
         ],
     )
