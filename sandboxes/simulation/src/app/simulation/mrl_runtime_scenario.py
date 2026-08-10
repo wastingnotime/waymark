@@ -448,7 +448,12 @@ def create_simulation() -> Scenario:
         seed=20260901,
         initial_time=START,
         run_id="waymark-first-slice",
-        actors=[Actor("subscriber")],
+        actors=[
+            Actor("subscriber"),
+            Actor("payment_provider"),
+            Actor("support_operator"),
+            Actor("expiry_scheduler"),
+        ],
         scheduled_actions=[
             action(timedelta(minutes=1), "create_account", create),
             action(timedelta(minutes=1, seconds=5), "pre_entitlement_access", pre_entitlement_access),
