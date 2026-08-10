@@ -161,3 +161,12 @@ def test_expiry_processing_reports_only_new_expirations():
     assert domain.expire_entitlements(instant(8)) == 1
     assert domain.expire_entitlements(instant(9)) == 0
     assert len([fact for fact in domain.facts if fact.__class__.__name__ == "EntitlementExpired"]) == 1
+
+
+def test_account_creation_retry_is_idempotent_but_conflicting_identity_is_rejected():
+    domain = WaymarkDomain()
+    user_id, payer_id, workspace_id = uuid4(), uuid4(), uuid4()
+    first = domain.create_account(user_id, payer_id, workspace_id, instant(1))
+    assert domain.create_account(user_id, payer_id, workspace_id, instant(2)) == first
+    with pytest.raises(DomainError, match="account already exists"):
+        domain.create_account(uuid4(), payer_id, workspace_id, instant(2))
