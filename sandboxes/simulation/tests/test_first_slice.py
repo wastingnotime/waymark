@@ -394,6 +394,10 @@ def test_subscription_request_is_idempotent():
     assert simulation.state.subscription_id == "subscription-1"
     assert request.payload["user_id"] == simulation.state.user_id
     assert request.payload["payer_id"] == simulation.state.payer_id
+    replayed = WaymarkSimulation.replay(simulation.state.events)
+    replayed_request = next(event for event in replayed.state.events if event.name == "SubscriptionRequested")
+    assert replayed_request.payload["user_id"] == replayed.state.user_id
+    assert replayed_request.payload["payer_id"] == replayed.state.payer_id
 
 
 def test_cancellation_request_is_idempotent():
