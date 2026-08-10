@@ -134,6 +134,11 @@ class WaymarkDomain:
         """A stable read-only snapshot of the append-only fact history."""
         return tuple(self._facts)
 
+    @property
+    def entries(self) -> tuple[NoteRecorded | LogEntryRecorded, ...]:
+        """Recorded workspace entries, excluding billing and access facts."""
+        return tuple(f for f in self._facts if isinstance(f, (NoteRecorded, LogEntryRecorded)))
+
     def _append(self, fact: Fact) -> Fact:
         self._facts.append(fact)
         return fact
