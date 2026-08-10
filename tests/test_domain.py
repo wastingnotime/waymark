@@ -278,6 +278,14 @@ def test_payment_failure_after_cancellation_is_rejected():
         domain.record_payment_failure("after-cancel-failure", instant(5))
 
 
+def test_daily_summary_matches_the_read_only_entry_projection():
+    domain = subscribed()
+    domain.record_note("one", instant(2))
+    domain.record_log("two", instant(2), instant(2))
+    assert len(domain.entries) == 2
+    assert sum(domain.daily_summary(instant(1), instant(3)).values()) == len(domain.entries)
+
+
 def test_entries_projection_is_read_only_and_excludes_billing_facts():
     domain = subscribed()
     note = domain.record_note("visible", instant(2))
