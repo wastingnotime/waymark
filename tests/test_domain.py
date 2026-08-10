@@ -86,3 +86,10 @@ def test_reusing_entry_id_with_different_body_is_rejected():
     domain.record_note("original", instant(2), entry_id)
     with pytest.raises(DomainError, match="entry id already used"):
         domain.record_note("changed", instant(2), entry_id)
+
+
+def test_cancellation_restricts_access_at_its_effective_boundary():
+    domain = subscribed()
+    domain.cancel_subscription(instant(4), instant(2))
+    assert domain.access_at(instant(4)).reason == "no_entitlement"
+    assert domain.access_at(instant(3)).allowed
