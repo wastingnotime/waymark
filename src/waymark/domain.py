@@ -336,6 +336,8 @@ class WaymarkDomain:
 
     @staticmethod
     def _require_aware(*timestamps: datetime) -> None:
+        if any(not isinstance(timestamp, datetime) for timestamp in timestamps):
+            raise DomainError("timestamps must be datetime values")
         if any(timestamp.tzinfo is None or timestamp.utcoffset() is None for timestamp in timestamps):
             raise DomainError("timestamps must be timezone-aware")
 
