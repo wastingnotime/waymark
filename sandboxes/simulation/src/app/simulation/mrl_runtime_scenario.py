@@ -92,6 +92,11 @@ _GRAPH_TARGET_BY_OPERATOR_ACTION = {
     "duplicate_operator_restore": "entitlement",
 }
 
+_GRAPH_TARGET_BY_EXPIRY_ACTION = {
+    "period_expiry": "entitlement",
+    "duplicate_period_expiry": "entitlement",
+}
+
 
 class _ObservatoryContext:
     """Decorate runtime observations with declared graph endpoints."""
@@ -163,6 +168,15 @@ def create_simulation() -> Scenario:
                     source="operations",
                     actor="support-operator",
                     payload={"use_case_id": operator_target},
+                )
+            expiry_target = _GRAPH_TARGET_BY_EXPIRY_ACTION.get(name)
+            if expiry_target is not None:
+                context.emit(
+                    "actor_intention",
+                    name,
+                    source="access_control",
+                    actor="expiry_scheduler",
+                    payload={"use_case_id": expiry_target},
                 )
             return callback(_ObservatoryContext(context))
 
