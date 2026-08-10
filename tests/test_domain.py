@@ -248,6 +248,14 @@ def test_access_decision_explains_cancellation_at_effective_boundary():
     assert domain.access_at(instant(4)).reason == "cancelled"
 
 
+def test_entry_count_is_derived_from_recorded_entries():
+    domain = subscribed()
+    assert domain.entry_count == 0
+    domain.record_note("one", instant(2))
+    domain.record_log("two", instant(2), instant(2))
+    assert domain.entry_count == 2
+
+
 def test_entries_projection_is_read_only_and_excludes_billing_facts():
     domain = subscribed()
     note = domain.record_note("visible", instant(2))
