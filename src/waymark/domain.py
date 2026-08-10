@@ -255,6 +255,8 @@ class WaymarkDomain:
 
     def record_log(self, body: str, happened_at: datetime, recorded_at: datetime, entry_id: UUID | None = None) -> LogEntryRecorded:
         self._require_aware(happened_at, recorded_at)
+        if recorded_at < happened_at:
+            raise DomainError("recorded_at must not precede happened_at")
         self._require_access(recorded_at)
         self._require_body(body)
         entry_id = entry_id or uuid4()
