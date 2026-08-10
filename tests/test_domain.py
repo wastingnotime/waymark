@@ -195,6 +195,12 @@ def test_account_identity_fields_must_be_uuids():
         domain.create_account("user", uuid4(), uuid4(), instant(1))
 
 
+def test_command_timestamps_must_be_datetimes():
+    domain = subscribed()
+    with pytest.raises(DomainError, match="timestamps must be datetime values"):
+        domain.record_payment_failure("bad-time", "not a datetime")
+
+
 def test_account_creation_retry_is_idempotent_but_conflicting_identity_is_rejected():
     domain = WaymarkDomain()
     user_id, payer_id, workspace_id = uuid4(), uuid4(), uuid4()
