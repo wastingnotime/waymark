@@ -93,3 +93,16 @@ def test_cancellation_restricts_access_at_its_effective_boundary():
     domain.cancel_subscription(instant(4), instant(2))
     assert domain.access_at(instant(4)).reason == "no_entitlement"
     assert domain.access_at(instant(3)).allowed
+
+
+def test_daily_summary_uses_the_requested_timezone_calendar():
+    domain = subscribed()
+    recorded_at = datetime(2026, 9, 2, 1, 30, tzinfo=UTC)
+    domain.record_note("late UTC", recorded_at)
+    assert domain.daily_summary(instant(1), instant(3), "America/Sao_Paulo") == {"2026-09-01": 1}
+
+
+def test_daily_summary_rejects_unknown_timezone():
+    domain = subscribed()
+    with pytest.raises(DomainError, match="unknown timezone"):
+        domain.daily_summary(instant(1), instant(3), "Mars/Olympus")
