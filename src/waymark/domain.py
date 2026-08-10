@@ -297,6 +297,8 @@ class WaymarkDomain:
             raise DomainError("summary end must not precede start")
         if not isinstance(timezone_name, str):
             raise DomainError("timezone name must be text")
+        if not timezone_name.strip():
+            raise DomainError("timezone name must not be empty")
         try:
             local_zone = ZoneInfo(timezone_name)
         except ZoneInfoNotFoundError as exc:
