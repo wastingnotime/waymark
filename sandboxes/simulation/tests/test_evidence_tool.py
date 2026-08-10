@@ -60,3 +60,10 @@ def test_runtime_adapter_registers_all_graph_actors():
     assert 'Actor("payment_provider")' in source
     assert 'Actor("support_operator")' in source
     assert 'Actor("expiry_scheduler")' in source
+
+
+def test_graph_validator_checks_observation_targets():
+    tool = Path("sandboxes/simulation/tools/validate_graph.py")
+    source = tool.read_text(encoding="utf-8")
+    assert "_GRAPH_TARGET_BY_OBSERVATION" in source
+    assert "observation_targets" in source
