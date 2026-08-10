@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -187,6 +187,12 @@ def test_summary_timezone_name_must_be_text():
     domain = subscribed()
     with pytest.raises(DomainError, match="timezone name must be text"):
         domain.daily_summary(instant(1), instant(3), 123)
+
+
+def test_account_identity_fields_must_be_uuids():
+    domain = WaymarkDomain()
+    with pytest.raises(DomainError, match="account identities must be UUIDs"):
+        domain.create_account("user", uuid4(), uuid4(), instant(1))
 
 
 def test_account_creation_retry_is_idempotent_but_conflicting_identity_is_rejected():
