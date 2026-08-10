@@ -52,3 +52,11 @@ def test_runtime_adapter_declares_an_explicit_event_source():
     source = adapter.read_text(encoding="utf-8")
     assert '"event_stream"' in source
     assert '"domain_events"' in source
+
+
+def test_runtime_adapter_registers_all_graph_actors():
+    adapter = Path("sandboxes/simulation/src/app/simulation/mrl_runtime_scenario.py")
+    source = adapter.read_text(encoding="utf-8")
+    assert 'Actor("payment_provider")' in source
+    assert 'Actor("support_operator")' in source
+    assert 'Actor("expiry_scheduler")' in source
