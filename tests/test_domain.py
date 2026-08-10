@@ -184,3 +184,11 @@ def test_cancellation_retry_remains_idempotent_after_effective_time():
     domain = subscribed()
     first = domain.cancel_subscription(instant(4), instant(2))
     assert domain.cancel_subscription(instant(4), instant(5)) == first
+
+
+def test_entry_retry_is_idempotent_after_access_is_revoked():
+    domain = subscribed()
+    entry_id = uuid4()
+    first = domain.record_note("durable", instant(2), entry_id)
+    domain.cancel_subscription(instant(4), instant(2))
+    assert domain.record_note("durable", instant(5), entry_id) == first
