@@ -261,6 +261,7 @@ class WaymarkDomain:
 
     def record_note(self, body: str, recorded_at: datetime, entry_id: UUID | None = None) -> NoteRecorded:
         self._require_aware(recorded_at)
+        self._require_entry_id(entry_id)
         entry_id = entry_id or uuid4()
         existing_entry = next((f for f in self.facts if getattr(f, "entry_id", None) == entry_id), None)
         if existing_entry:
@@ -273,6 +274,7 @@ class WaymarkDomain:
 
     def record_log(self, body: str, happened_at: datetime, recorded_at: datetime, entry_id: UUID | None = None) -> LogEntryRecorded:
         self._require_aware(happened_at, recorded_at)
+        self._require_entry_id(entry_id)
         entry_id = entry_id or uuid4()
         existing_entry = next((f for f in self.facts if getattr(f, "entry_id", None) == entry_id), None)
         if existing_entry:
@@ -333,6 +335,11 @@ class WaymarkDomain:
             raise DomainError("payment id must be text")
         if not payment_id.strip():
             raise DomainError("payment id must not be empty")
+
+    @staticmethod
+    def _require_entry_id(entry_id: UUID | None) -> None:
+        if entry_id is not None and not isinstance(entry_id, UUID):
+            raise DomainError("entry id must be a UUID")
 
     @staticmethod
     def _require_aware(*timestamps: datetime) -> None:
