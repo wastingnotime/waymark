@@ -334,10 +334,9 @@ class WaymarkDomain:
         except ZoneInfoNotFoundError as exc:
             raise DomainError(f"unknown timezone: {timezone_name}") from exc
         counts: Counter[str] = Counter()
-        for fact in self.facts:
-            instant = getattr(fact, "recorded_at", None)
-            if isinstance(fact, (NoteRecorded, LogEntryRecorded)) and start <= instant <= end:
-                counts[instant.astimezone(local_zone).date().isoformat()] += 1
+        for entry in self.entries:
+            if start <= entry.recorded_at <= end:
+                counts[entry.recorded_at.astimezone(local_zone).date().isoformat()] += 1
         return dict(sorted(counts.items()))
 
     def _subscription(self) -> SubscriptionRequested:
