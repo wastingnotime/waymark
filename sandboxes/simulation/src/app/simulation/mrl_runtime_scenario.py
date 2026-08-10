@@ -86,6 +86,12 @@ _GRAPH_TARGET_BY_PROVIDER_ACTION = {
     "renew_after_expiry": "payment_processing",
 }
 
+_GRAPH_TARGET_BY_OPERATOR_ACTION = {
+    "operator_inspection": "access_control",
+    "operator_restore": "entitlement",
+    "duplicate_operator_restore": "entitlement",
+}
+
 
 class _ObservatoryContext:
     """Decorate runtime observations with declared graph endpoints."""
@@ -148,6 +154,15 @@ def create_simulation() -> Scenario:
                     source="payment_provider",
                     actor="payment_provider",
                     payload={"use_case_id": provider_target},
+                )
+            operator_target = _GRAPH_TARGET_BY_OPERATOR_ACTION.get(name)
+            if operator_target is not None:
+                context.emit(
+                    "actor_intention",
+                    name,
+                    source="operations",
+                    actor="support-operator",
+                    payload={"use_case_id": operator_target},
                 )
             return callback(_ObservatoryContext(context))
 
