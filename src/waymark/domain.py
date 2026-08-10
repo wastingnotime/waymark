@@ -139,6 +139,11 @@ class WaymarkDomain:
         """Recorded workspace entries, excluding billing and access facts."""
         return tuple(f for f in self._facts if isinstance(f, (NoteRecorded, LogEntryRecorded)))
 
+    @property
+    def entry_count(self) -> int:
+        """Number of recorded workspace entries in the current fact history."""
+        return len(self.entries)
+
     def _append(self, fact: Fact) -> Fact:
         self._facts.append(fact)
         return fact
