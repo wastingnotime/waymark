@@ -211,6 +211,8 @@ class WaymarkDomain:
 
     def cancel_subscription(self, effective_at: datetime, recorded_at: datetime) -> CancellationScheduled:
         self._require_aware(effective_at, recorded_at)
+        if effective_at < recorded_at:
+            raise DomainError("effective_at must not precede recorded_at")
         subscription = self._subscription()
         existing = next((f for f in self.facts if isinstance(f, CancellationScheduled)), None)
         if existing:
