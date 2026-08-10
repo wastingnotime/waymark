@@ -112,3 +112,11 @@ def test_payment_id_cannot_be_reused_across_success_and_failure():
     domain = subscribed()
     with pytest.raises(DomainError, match="payment id already used"):
         domain.record_payment_failure("pay-1", instant(2))
+
+
+def test_cancellation_retry_is_idempotent_but_conflicting_retry_is_rejected():
+    domain = subscribed()
+    first = domain.cancel_subscription(instant(7), instant(2))
+    assert domain.cancel_subscription(instant(7), instant(3)) == first
+    with pytest.raises(DomainError, match="cancellation already scheduled"):
+        domain.cancel_subscription(instant(6), instant(3))
