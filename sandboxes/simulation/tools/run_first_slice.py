@@ -23,6 +23,11 @@ def main() -> int:
         for observation in result.observations.observations
         if observation.type == "invariant_result" and observation.payload.get("passed") is False
     ]
+    actor_intentions = [
+        observation
+        for observation in result.observations.observations
+        if observation.type == "actor_intention"
+    ]
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(jsonl, encoding="utf-8")
@@ -31,6 +36,9 @@ def main() -> int:
         print(jsonl, end="")
     if failed_invariants:
         print(f"failed invariants: {', '.join(failed_invariants)}", file=sys.stderr)
+        return 1
+    if not actor_intentions:
+        print("missing actor intentions", file=sys.stderr)
         return 1
     return 0
 
