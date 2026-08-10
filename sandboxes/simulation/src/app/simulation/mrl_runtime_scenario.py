@@ -77,6 +77,15 @@ _GRAPH_TARGET_BY_SUBSCRIBER_ACTION = {
     "record_post_renewal_log": "recording",
 }
 
+_GRAPH_TARGET_BY_PROVIDER_ACTION = {
+    "activate_period": "payment_processing",
+    "duplicate_payment_success": "payment_processing",
+    "payment_failure": "payment_processing",
+    "duplicate_payment_failure": "payment_processing",
+    "payment_recovery": "payment_processing",
+    "renew_after_expiry": "payment_processing",
+}
+
 
 class _ObservatoryContext:
     """Decorate runtime observations with declared graph endpoints."""
@@ -130,6 +139,15 @@ def create_simulation() -> Scenario:
                     source="subscriber",
                     actor="subscriber",
                     payload={"use_case_id": subscriber_target},
+                )
+            provider_target = _GRAPH_TARGET_BY_PROVIDER_ACTION.get(name)
+            if provider_target is not None:
+                context.emit(
+                    "actor_intention",
+                    name,
+                    source="payment_provider",
+                    actor="payment_provider",
+                    payload={"use_case_id": provider_target},
                 )
             return callback(_ObservatoryContext(context))
 
