@@ -165,6 +165,7 @@ class WaymarkDomain:
         recorded_at: datetime,
     ) -> PaymentSucceeded:
         self._require_aware(period_start, period_end, recorded_at)
+        self._require_payment_id(payment_id)
         subscription = self._subscription()
         if period_end <= period_start:
             raise DomainError("billing period must have a positive duration")
@@ -196,6 +197,7 @@ class WaymarkDomain:
 
     def record_payment_failure(self, payment_id: str, recorded_at: datetime) -> PaymentFailed:
         self._require_aware(recorded_at)
+        self._require_payment_id(payment_id)
         subscription = self._subscription()
         if any(isinstance(f, PaymentSucceeded) and f.payment_id == payment_id for f in self.facts):
             raise DomainError("payment id already used with a different outcome")
@@ -300,6 +302,11 @@ class WaymarkDomain:
     def _require_body(body: str) -> None:
         if not body.strip():
             raise DomainError("entry body must not be empty")
+
+    @staticmethod
+    def _require_payment_id(payment_id: str) -> None:
+        if not payment_id.strip():
+            raise DomainError("payment id must not be empty")
 
     @staticmethod
     def _require_aware(*timestamps: datetime) -> None:
