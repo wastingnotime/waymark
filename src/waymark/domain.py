@@ -143,6 +143,8 @@ class WaymarkDomain:
         self, user_id: UUID, payer_id: UUID, workspace_id: UUID, recorded_at: datetime
     ) -> AccountCreated:
         self._require_aware(recorded_at)
+        if not all(isinstance(identity, UUID) for identity in (user_id, payer_id, workspace_id)):
+            raise DomainError("account identities must be UUIDs")
         existing = next((f for f in self.facts if isinstance(f, AccountCreated)), None)
         if existing:
             if (existing.user_id, existing.payer_id, existing.workspace_id) != (user_id, payer_id, workspace_id):
