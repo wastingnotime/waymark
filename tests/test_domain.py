@@ -228,6 +228,12 @@ def test_payment_acceptance_cannot_precede_subscription_request():
         domain.record_payment_success(instant(2), instant(8), "early-payment", instant(1))
 
 
+def test_fact_history_cannot_be_mutated_through_public_view():
+    domain = subscribed()
+    with pytest.raises(AttributeError):
+        domain.facts.append(domain.facts[0])
+
+
 def test_account_creation_retry_is_idempotent_but_conflicting_identity_is_rejected():
     domain = WaymarkDomain()
     user_id, payer_id, workspace_id = uuid4(), uuid4(), uuid4()
