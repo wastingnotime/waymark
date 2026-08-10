@@ -222,6 +222,12 @@ class WaymarkDomain:
             if existing.effective_at != effective_at:
                 raise DomainError("cancellation already scheduled with different details")
             return existing
+        if not any(
+            entitlement.effective_from <= effective_at <= entitlement.effective_until
+            and not entitlement.expired
+            for entitlement in self._entitlements()
+        ):
+            raise DomainError("cancellation requires an active paid entitlement")
         return self._append(CancellationScheduled(subscription.subscription_id, effective_at, recorded_at))
 
     def expire_entitlements(self, at: datetime) -> int:
