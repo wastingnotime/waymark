@@ -325,6 +325,8 @@ class WaymarkDomain:
 
     @staticmethod
     def _require_payment_id(payment_id: str) -> None:
+        if not isinstance(payment_id, str):
+            raise DomainError("payment id must be text")
         if not payment_id.strip():
             raise DomainError("payment id must not be empty")
 
