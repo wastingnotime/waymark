@@ -110,6 +110,7 @@ def test_operator_can_inspect_and_restore_a_suspended_entitlement():
     assert inspection["reason"] == "payment_failed"
     assert inspection["period_end"] == "2026-09-08T00:00:00+00:00"
     assert inspection["event_count"] == 6
+    assert inspection["subscription_status"] == "past_due"
     assert len(simulation.state.events) == event_count
     assert simulation.operator_restore(context, "support-operator", "verified payment manually")
     assert simulation.access_check(context)
@@ -381,6 +382,20 @@ def test_access_is_restricted_before_entitlement():
     assert context.events[-1][1]["payload"]["reason"] == "no_entitlement"
     assert not simulation.record_note(context, "should not be stored")
     assert simulation.state.entries == []
+
+
+def test_subscription_status_is_derived():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    assert simulation.subscription_status(start) == "none"
+    simulation.create_account(context)
+    simulation.request_subscription(context, "subscription-1")
+    assert simulation.subscription_status(start) == "requested"
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    assert simulation.subscription_status(start) == "active"
+    simulation.fail_payment(context, "payment-1")
+    assert simulation.subscription_status(start) == "past_due"
 
 
 def test_subscription_request_is_idempotent():

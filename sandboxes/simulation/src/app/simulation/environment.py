@@ -272,9 +272,23 @@ class WaymarkSimulation:
             "cancelled": self.state.cancelled,
             "cancellation_at": self.state.cancellation_at.isoformat() if self.state.cancellation_at else None,
             "event_count": len(self.state.events),
+            "subscription_status": self.subscription_status(context.clock.now()),
         }
         context.emit("operator_observation", "account_inspected", source="Operations", payload=inspection)
         return inspection
+
+    def subscription_status(self, at: datetime) -> str:
+        if self.state.subscription_id is None:
+            return "none"
+        if self.state.expired:
+            return "expired"
+        if self.state.payment_failed:
+            return "past_due"
+        if self.state.cancelled:
+            return "cancellation_scheduled"
+        if self.state.period_start is not None and self.state.period_start <= at < self.state.period_end:
+            return "active"
+        return "requested"
 
     def operator_restore(self, context: object, actor: str, reason: str) -> bool:
         if not actor.strip() or not reason.strip():

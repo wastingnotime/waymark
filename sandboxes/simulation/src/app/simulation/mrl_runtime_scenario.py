@@ -133,9 +133,9 @@ def create_simulation() -> Scenario:
         if not inspections:
             return True
         payload = inspections[-1].payload
-        return payload.get("reason") == "payment_failed" and payload.get("payment_failed") is True and all(
+        return payload.get("reason") == "payment_failed" and payload.get("payment_failed") is True and payload.get("subscription_status") == "past_due" and all(
             key in payload
-            for key in ("payer_id", "period_start", "period_end", "payment_failed", "expired", "cancelled", "event_count")
+            for key in ("payer_id", "period_start", "period_end", "payment_failed", "expired", "cancelled", "event_count", "subscription_status")
         )
 
     def summary_timezone_recorded(context):

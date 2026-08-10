@@ -67,6 +67,8 @@ entitlement, access decision, and daily metric summary.
     retaining a separate billing role.
 29. The subscription request fact explicitly links subscription, user, and
     payer identities.
+30. Subscription status is a derived read model, not an independent mutable
+    flag.
 
 ## Open questions
 
@@ -138,3 +140,6 @@ The payer identity slice is documented in
 
 The subscription ownership slice is documented in
 `docs/slices/subscription-ownership.md`.
+
+The subscription status slice is documented in
+`docs/slices/subscription-status.md`.
