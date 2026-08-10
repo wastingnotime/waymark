@@ -66,3 +66,9 @@ def test_retries_do_not_duplicate_payment_or_entry_facts():
     entry_id = uuid4()
     first = domain.record_note("same", instant(2), entry_id)
     assert domain.record_note("same", instant(2), entry_id) == first
+
+
+def test_domain_rejects_naive_command_timestamps():
+    domain = WaymarkDomain()
+    with pytest.raises(DomainError, match="timezone-aware"):
+        domain.create_account(uuid4(), uuid4(), uuid4(), datetime(2026, 9, 1))
