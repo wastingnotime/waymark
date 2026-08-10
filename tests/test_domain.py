@@ -256,6 +256,14 @@ def test_entry_count_is_derived_from_recorded_entries():
     assert domain.entry_count == 2
 
 
+def test_fact_snapshot_stays_stable_when_new_facts_are_appended():
+    domain = subscribed()
+    snapshot = domain.facts
+    domain.record_note("new", instant(2))
+    assert len(snapshot) + 1 == domain.fact_count
+    assert len(snapshot) < len(domain.facts)
+
+
 def test_entries_projection_is_read_only_and_excludes_billing_facts():
     domain = subscribed()
     note = domain.record_note("visible", instant(2))
