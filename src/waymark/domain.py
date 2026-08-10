@@ -150,8 +150,11 @@ class WaymarkDomain:
     def start_subscription(self, subscription_id: UUID, requested_at: datetime) -> SubscriptionRequested:
         self._require_aware(requested_at)
         account = self._account()
-        if any(isinstance(f, SubscriptionRequested) for f in self.facts):
-            raise DomainError("a current subscription already exists")
+        existing = next((f for f in self.facts if isinstance(f, SubscriptionRequested)), None)
+        if existing:
+            if existing.subscription_id != subscription_id:
+                raise DomainError("a current subscription already exists")
+            return existing
         return self._append(SubscriptionRequested(subscription_id, account.user_id, requested_at))
 
     def record_payment_success(
