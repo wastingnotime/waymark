@@ -263,7 +263,7 @@ class WaymarkDomain:
         self._require_aware(at)
         cancellation_at = self._cancellation_at()
         if cancellation_at is not None and cancellation_at <= at:
-            return AccessDecision(False, "no_entitlement", at)
+            return AccessDecision(False, "cancelled", at)
         entitlement = self._current_entitlement(at)
         if entitlement is None:
             if any(e.expired and e.effective_until <= at for e in self._entitlements()):
