@@ -17,6 +17,86 @@ from app.simulation.ports import FakePaymentProvider
 
 START = datetime(2026, 9, 1, tzinfo=timezone.utc)
 
+_GRAPH_SOURCE_BY_BOUNDARY = {
+    "WaymarkSimulation": "account_bootstrap",
+    "Billing": "payment_processing",
+    "Access": "entitlement",
+    "Recording": "recording",
+    "Insights": "insights",
+    "Operations": "operations",
+}
+
+_GRAPH_SOURCE_BY_OBSERVATION = {
+    "subscription_requested": "subscription_lifecycle",
+    "cancellation_scheduled": "subscription_lifecycle",
+    "duplicate_subscription_request_ignored": "subscription_lifecycle",
+    "duplicate_cancellation_ignored": "subscription_lifecycle",
+}
+
+_GRAPH_TARGET_BY_OBSERVATION = {
+    "account_created": "fact_history",
+    "duplicate_account_creation_ignored": "fact_history",
+    "subscription_requested": "fact_history",
+    "duplicate_subscription_request_ignored": "fact_history",
+    "payment_succeeded": "fact_history",
+    "payment_failed": "fact_history",
+    "payment_recovered": "fact_history",
+    "duplicate_payment_success_ignored": "fact_history",
+    "duplicate_payment_failure_ignored": "fact_history",
+    "entitlement_granted": "entitlement",
+    "new_entitlement_granted": "entitlement",
+    "entitlement_expired": "entitlement",
+    "entitlement_restored": "entitlement",
+    "workspace_allowed": "access_control",
+    "workspace_restricted": "access_control",
+    "workspace_access_checked": "access_control",
+    "note_recorded": "fact_history",
+    "log_entry_recorded": "fact_history",
+    "note_rejected": "access_control",
+    "log_entry_rejected": "access_control",
+    "daily_entry_summary": "summary",
+    "account_inspected": "access_control",
+    "cancellation_scheduled": "fact_history",
+    "duplicate_cancellation_ignored": "fact_history",
+}
+
+
+class _ObservatoryContext:
+    """Decorate runtime observations with declared graph endpoints."""
+
+    def __init__(self, context: object) -> None:
+        self._context = context
+
+    def __getattr__(self, name: str) -> object:
+        return getattr(self._context, name)
+
+    def emit(
+        self,
+        event_type: str,
+        name: str,
+        *,
+        source: str | None = None,
+        actor: str | None = None,
+        correlation_id: str | None = None,
+        payload: dict[str, object] | None = None,
+    ) -> object:
+        graph_source = _GRAPH_SOURCE_BY_OBSERVATION.get(
+            name,
+            _GRAPH_SOURCE_BY_BOUNDARY.get(source or "", source),
+        )
+        graph_target = _GRAPH_TARGET_BY_OBSERVATION.get(name)
+        graph_payload = dict(payload or {})
+        if graph_target is not None:
+            graph_payload["use_case_id"] = graph_target
+        return self._context.emit(
+            event_type,
+            name,
+            source=graph_source,
+            actor=actor,
+            correlation_id=correlation_id,
+            payload=graph_payload,
+        )
+
 
 def create_simulation() -> Scenario:
     simulation = WaymarkSimulation()
@@ -24,7 +104,10 @@ def create_simulation() -> Scenario:
     end = START + timedelta(days=7)
 
     def action(offset: timedelta, name: str, callback):
-        return InitialScheduledAction(START + offset, callback, name, source="WaymarkScenario")
+        def observed(context):
+            return callback(_ObservatoryContext(context))
+
+        return InitialScheduledAction(START + offset, observed, name, source="WaymarkScenario")
 
     def create(context):
         simulation.create_account(context)
