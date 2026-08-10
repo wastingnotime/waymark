@@ -172,6 +172,8 @@ class WaymarkDomain:
         subscription = self._subscription()
         if period_end <= period_start:
             raise DomainError("billing period must have a positive duration")
+        if period_start < subscription.requested_at:
+            raise DomainError("period cannot begin before subscription request")
         existing_payment = next(
             (f for f in self.facts if isinstance(f, PaymentSucceeded) and f.payment_id == payment_id),
             None,
