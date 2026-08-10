@@ -286,6 +286,14 @@ def test_daily_summary_matches_the_read_only_entry_projection():
     assert sum(domain.daily_summary(instant(1), instant(3)).values()) == len(domain.entries)
 
 
+def test_payment_recovery_before_cancellation_boundary_remains_allowed():
+    domain = subscribed()
+    domain.record_payment_failure("renewal-failure", instant(3))
+    domain.cancel_subscription(instant(7), instant(3))
+    domain.record_payment_success(instant(1), instant(8), "renewal-recovery", instant(4))
+    assert domain.access_at(instant(4)).allowed
+
+
 def test_entries_projection_is_read_only_and_excludes_billing_facts():
     domain = subscribed()
     note = domain.record_note("visible", instant(2))
