@@ -220,6 +220,8 @@ class WaymarkDomain:
         self._require_aware(recorded_at)
         self._require_payment_id(payment_id)
         subscription = self._subscription()
+        if recorded_at < subscription.requested_at:
+            raise DomainError("payment cannot precede subscription request")
         if any(isinstance(f, PaymentSucceeded) and f.payment_id == payment_id for f in self.facts):
             raise DomainError("payment id already used with a different outcome")
         if any(isinstance(f, PaymentFailed) and f.payment_id == payment_id for f in self.facts):
