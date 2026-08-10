@@ -127,10 +127,15 @@ class WaymarkDomain:
     """Command handler and projection for one Waymark user's workspace."""
 
     def __init__(self) -> None:
-        self.facts: list[Fact] = []
+        self._facts: list[Fact] = []
+
+    @property
+    def facts(self) -> tuple[Fact, ...]:
+        """A stable read-only snapshot of the append-only fact history."""
+        return tuple(self._facts)
 
     def _append(self, fact: Fact) -> Fact:
-        self.facts.append(fact)
+        self._facts.append(fact)
         return fact
 
     def _account(self) -> AccountCreated:
