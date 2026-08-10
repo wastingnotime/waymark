@@ -143,8 +143,11 @@ class WaymarkDomain:
         self, user_id: UUID, payer_id: UUID, workspace_id: UUID, recorded_at: datetime
     ) -> AccountCreated:
         self._require_aware(recorded_at)
-        if any(isinstance(f, AccountCreated) for f in self.facts):
-            raise DomainError("only one account is supported")
+        existing = next((f for f in self.facts if isinstance(f, AccountCreated)), None)
+        if existing:
+            if (existing.user_id, existing.payer_id, existing.workspace_id) != (user_id, payer_id, workspace_id):
+                raise DomainError("account already exists with different details")
+            return existing
         return self._append(AccountCreated(user_id, payer_id, workspace_id, recorded_at))
 
     def start_subscription(self, subscription_id: UUID, requested_at: datetime) -> SubscriptionRequested:
