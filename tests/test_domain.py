@@ -142,3 +142,9 @@ def test_payment_correlation_id_must_not_be_empty():
     domain = subscribed()
     with pytest.raises(DomainError, match="payment id must not be empty"):
         domain.record_payment_failure("  ", instant(2))
+
+
+def test_log_acceptance_cannot_be_backdated_before_happened_at():
+    domain = subscribed()
+    with pytest.raises(DomainError, match="recorded_at must not precede happened_at"):
+        domain.record_log("future event", instant(3), instant(2))
