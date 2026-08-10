@@ -183,6 +183,12 @@ def test_payment_correlation_id_must_be_text():
         domain.record_payment_failure(123, instant(2))
 
 
+def test_summary_timezone_name_must_be_text():
+    domain = subscribed()
+    with pytest.raises(DomainError, match="timezone name must be text"):
+        domain.daily_summary(instant(1), instant(3), 123)
+
+
 def test_account_creation_retry_is_idempotent_but_conflicting_identity_is_rejected():
     domain = WaymarkDomain()
     user_id, payer_id, workspace_id = uuid4(), uuid4(), uuid4()
