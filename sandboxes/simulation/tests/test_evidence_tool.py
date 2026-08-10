@@ -88,3 +88,10 @@ def test_evidence_tool_requires_actor_intentions():
     source = tool.read_text(encoding="utf-8")
     assert "actor_intentions" in source
     assert "missing actor intentions" in source
+
+
+def test_graph_validator_checks_runtime_actor_mapping():
+    tool = Path("sandboxes/simulation/tools/validate_graph.py")
+    source = tool.read_text(encoding="utf-8")
+    assert "actor_graph_nodes" in source
+    assert "missing_actor_nodes" in source
