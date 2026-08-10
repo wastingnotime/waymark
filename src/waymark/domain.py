@@ -214,6 +214,9 @@ class WaymarkDomain:
 
     def access_at(self, at: datetime) -> AccessDecision:
         self._require_aware(at)
+        cancellation_at = self._cancellation_at()
+        if cancellation_at is not None and cancellation_at <= at:
+            return AccessDecision(False, "no_entitlement", at)
         entitlement = self._current_entitlement(at)
         if entitlement is None:
             return AccessDecision(False, "no_entitlement", at)
@@ -270,6 +273,10 @@ class WaymarkDomain:
             return next(f for f in self.facts if isinstance(f, SubscriptionRequested))
         except StopIteration as exc:
             raise DomainError("subscription does not exist") from exc
+
+    def _cancellation_at(self) -> datetime | None:
+        cancellations = [f.effective_at for f in self.facts if isinstance(f, CancellationScheduled)]
+        return min(cancellations, default=None)
 
     def _require_access(self, at: datetime) -> None:
         if not self.access_at(at).allowed:
