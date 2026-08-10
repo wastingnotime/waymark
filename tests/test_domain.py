@@ -264,6 +264,13 @@ def test_fact_snapshot_stays_stable_when_new_facts_are_appended():
     assert len(snapshot) < len(domain.facts)
 
 
+def test_payment_success_after_cancellation_is_rejected():
+    domain = subscribed()
+    domain.cancel_subscription(instant(4), instant(2))
+    with pytest.raises(DomainError, match="subscription is cancelled"):
+        domain.record_payment_success(instant(8), instant(15), "after-cancel", instant(8))
+
+
 def test_entries_projection_is_read_only_and_excludes_billing_facts():
     domain = subscribed()
     note = domain.record_note("visible", instant(2))
