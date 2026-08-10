@@ -60,6 +60,23 @@ _GRAPH_TARGET_BY_OBSERVATION = {
     "duplicate_cancellation_ignored": "fact_history",
 }
 
+_GRAPH_TARGET_BY_SUBSCRIBER_ACTION = {
+    "create_account": "account_bootstrap",
+    "duplicate_create_account": "account_bootstrap",
+    "pre_entitlement_access": "access_control",
+    "request_subscription": "subscription_lifecycle",
+    "duplicate_subscription": "subscription_lifecycle",
+    "record_note": "recording",
+    "record_retried_note": "recording",
+    "repeat_retried_note": "recording",
+    "restricted_write": "recording",
+    "record_log": "recording",
+    "daily_summary": "insights",
+    "schedule_cancellation": "subscription_lifecycle",
+    "duplicate_cancellation": "subscription_lifecycle",
+    "record_post_renewal_log": "recording",
+}
+
 
 class _ObservatoryContext:
     """Decorate runtime observations with declared graph endpoints."""
@@ -105,6 +122,15 @@ def create_simulation() -> Scenario:
 
     def action(offset: timedelta, name: str, callback):
         def observed(context):
+            subscriber_target = _GRAPH_TARGET_BY_SUBSCRIBER_ACTION.get(name)
+            if subscriber_target is not None:
+                context.emit(
+                    "actor_intention",
+                    name,
+                    source="subscriber",
+                    actor="subscriber",
+                    payload={"use_case_id": subscriber_target},
+                )
             return callback(_ObservatoryContext(context))
 
         return InitialScheduledAction(START + offset, observed, name, source="WaymarkScenario")
