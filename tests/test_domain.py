@@ -177,6 +177,12 @@ def test_entry_body_must_be_text():
         domain.record_note(123, instant(2))
 
 
+def test_payment_correlation_id_must_be_text():
+    domain = subscribed()
+    with pytest.raises(DomainError, match="payment id must be text"):
+        domain.record_payment_failure(123, instant(2))
+
+
 def test_account_creation_retry_is_idempotent_but_conflicting_identity_is_rejected():
     domain = WaymarkDomain()
     user_id, payer_id, workspace_id = uuid4(), uuid4(), uuid4()
