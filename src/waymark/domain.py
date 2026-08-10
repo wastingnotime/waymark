@@ -141,11 +141,13 @@ class WaymarkDomain:
     def create_account(
         self, user_id: UUID, payer_id: UUID, workspace_id: UUID, recorded_at: datetime
     ) -> AccountCreated:
+        self._require_aware(recorded_at)
         if any(isinstance(f, AccountCreated) for f in self.facts):
             raise DomainError("only one account is supported")
         return self._append(AccountCreated(user_id, payer_id, workspace_id, recorded_at))
 
     def start_subscription(self, subscription_id: UUID, requested_at: datetime) -> SubscriptionRequested:
+        self._require_aware(requested_at)
         account = self._account()
         if any(isinstance(f, SubscriptionRequested) for f in self.facts):
             raise DomainError("a current subscription already exists")
@@ -158,6 +160,7 @@ class WaymarkDomain:
         payment_id: str,
         recorded_at: datetime,
     ) -> PaymentSucceeded:
+        self._require_aware(period_start, period_end, recorded_at)
         subscription = self._subscription()
         if period_end <= period_start:
             raise DomainError("billing period must have a positive duration")
@@ -180,6 +183,7 @@ class WaymarkDomain:
         return payment
 
     def record_payment_failure(self, payment_id: str, recorded_at: datetime) -> PaymentFailed:
+        self._require_aware(recorded_at)
         subscription = self._subscription()
         if any(isinstance(f, PaymentFailed) and f.payment_id == payment_id for f in self.facts):
             return next(f for f in self.facts if isinstance(f, PaymentFailed) and f.payment_id == payment_id)
@@ -190,17 +194,20 @@ class WaymarkDomain:
         return failure
 
     def cancel_subscription(self, effective_at: datetime, recorded_at: datetime) -> CancellationScheduled:
+        self._require_aware(effective_at, recorded_at)
         subscription = self._subscription()
         if any(isinstance(f, CancellationScheduled) for f in self.facts):
             raise DomainError("subscription is already scheduled for cancellation")
         return self._append(CancellationScheduled(subscription.subscription_id, effective_at, recorded_at))
 
     def expire_entitlements(self, at: datetime) -> None:
+        self._require_aware(at)
         for entitlement in self._entitlements():
             if entitlement.effective_until <= at and not entitlement.expired:
                 self._append(EntitlementExpired(entitlement.entitlement_id, at))
 
     def access_at(self, at: datetime) -> AccessDecision:
+        self._require_aware(at)
         entitlement = self._current_entitlement(at)
         if entitlement is None:
             return AccessDecision(False, "no_entitlement", at)
@@ -211,6 +218,7 @@ class WaymarkDomain:
         return AccessDecision(True, "entitled", at)
 
     def record_note(self, body: str, recorded_at: datetime, entry_id: UUID | None = None) -> NoteRecorded:
+        self._require_aware(recorded_at)
         self._require_access(recorded_at)
         self._require_body(body)
         entry_id = entry_id or uuid4()
@@ -219,6 +227,7 @@ class WaymarkDomain:
         return self._append(NoteRecorded(entry_id, self._account().workspace_id, body, recorded_at))
 
     def record_log(self, body: str, happened_at: datetime, recorded_at: datetime, entry_id: UUID | None = None) -> LogEntryRecorded:
+        self._require_aware(happened_at, recorded_at)
         self._require_access(recorded_at)
         self._require_body(body)
         entry_id = entry_id or uuid4()
@@ -227,6 +236,7 @@ class WaymarkDomain:
         return self._append(LogEntryRecorded(entry_id, self._account().workspace_id, body, happened_at, recorded_at))
 
     def daily_summary(self, start: datetime, end: datetime, timezone_name: str = "UTC") -> dict[str, int]:
+        self._require_aware(start, end)
         if end < start:
             raise DomainError("summary end must not precede start")
         # The first slice accepts UTC; named timezone conversion belongs in the adapter.
@@ -253,6 +263,11 @@ class WaymarkDomain:
     def _require_body(body: str) -> None:
         if not body.strip():
             raise DomainError("entry body must not be empty")
+
+    @staticmethod
+    def _require_aware(*timestamps: datetime) -> None:
+        if any(timestamp.tzinfo is None or timestamp.utcoffset() is None for timestamp in timestamps):
+            raise DomainError("timestamps must be timezone-aware")
 
     def _entitlements(self) -> list["_EntitlementState"]:
         states: dict[UUID, _EntitlementState] = {}
