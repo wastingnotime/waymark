@@ -201,6 +201,12 @@ def test_command_timestamps_must_be_datetimes():
         domain.record_payment_failure("bad-time", "not a datetime")
 
 
+def test_entry_id_must_be_a_uuid_when_supplied():
+    domain = subscribed()
+    with pytest.raises(DomainError, match="entry id must be a UUID"):
+        domain.record_note("entry", instant(2), "entry-1")
+
+
 def test_account_creation_retry_is_idempotent_but_conflicting_identity_is_rejected():
     domain = WaymarkDomain()
     user_id, payer_id, workspace_id = uuid4(), uuid4(), uuid4()
