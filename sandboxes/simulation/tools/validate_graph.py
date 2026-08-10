@@ -23,7 +23,7 @@ def main() -> int:
         raise SystemExit("declared graph contains duplicate node ids")
 
     for edge in scenario.observatory_edges:
-        if edge.source not in node_ids or edge.target not in node_ids:
+        if edge.from_node not in node_ids or edge.to_node not in node_ids:
             raise SystemExit(f"declared graph has an edge endpoint outside its nodes: {edge}")
 
     mapped_targets = set().union(
