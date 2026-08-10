@@ -221,11 +221,14 @@ class WaymarkDomain:
             return existing
         return self._append(CancellationScheduled(subscription.subscription_id, effective_at, recorded_at))
 
-    def expire_entitlements(self, at: datetime) -> None:
+    def expire_entitlements(self, at: datetime) -> int:
         self._require_aware(at)
+        expired_count = 0
         for entitlement in self._entitlements():
             if entitlement.effective_until <= at and not entitlement.expired:
                 self._append(EntitlementExpired(entitlement.entitlement_id, at))
+                expired_count += 1
+        return expired_count
 
     def access_at(self, at: datetime) -> AccessDecision:
         self._require_aware(at)
