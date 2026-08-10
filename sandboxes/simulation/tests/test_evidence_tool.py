@@ -67,3 +67,10 @@ def test_graph_validator_checks_observation_targets():
     source = tool.read_text(encoding="utf-8")
     assert "_GRAPH_TARGET_BY_OBSERVATION" in source
     assert "observation_targets" in source
+
+
+def test_graph_validator_checks_node_metadata():
+    tool = Path("sandboxes/simulation/tools/validate_graph.py")
+    source = tool.read_text(encoding="utf-8")
+    assert "required_node_fields" in source
+    assert "invalid_node_metadata" in source
