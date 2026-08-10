@@ -220,6 +220,14 @@ def test_subscription_id_must_be_a_uuid():
         domain.start_subscription("subscription-1", instant(1))
 
 
+def test_payment_acceptance_cannot_precede_subscription_request():
+    domain = WaymarkDomain()
+    domain.create_account(uuid4(), uuid4(), uuid4(), instant(2))
+    domain.start_subscription(uuid4(), instant(2))
+    with pytest.raises(DomainError, match="payment cannot precede subscription request"):
+        domain.record_payment_success(instant(2), instant(8), "early-payment", instant(1))
+
+
 def test_account_creation_retry_is_idempotent_but_conflicting_identity_is_rejected():
     domain = WaymarkDomain()
     user_id, payer_id, workspace_id = uuid4(), uuid4(), uuid4()
