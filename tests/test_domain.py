@@ -234,6 +234,14 @@ def test_fact_history_cannot_be_mutated_through_public_view():
         domain.facts.append(domain.facts[0])
 
 
+def test_entries_projection_is_read_only_and_excludes_billing_facts():
+    domain = subscribed()
+    note = domain.record_note("visible", instant(2))
+    assert domain.entries == (note,)
+    with pytest.raises(AttributeError):
+        domain.entries.append(note)
+
+
 def test_account_creation_retry_is_idempotent_but_conflicting_identity_is_rejected():
     domain = WaymarkDomain()
     user_id, payer_id, workspace_id = uuid4(), uuid4(), uuid4()
