@@ -23,6 +23,15 @@ def main() -> int:
     if len(node_ids) != len(scenario.observatory_nodes):
         raise SystemExit("declared graph contains duplicate node ids")
 
+    required_node_fields = ("realm", "domain", "layer", "status")
+    invalid_node_metadata = [
+        node.id
+        for node in scenario.observatory_nodes
+        if node.realm != "waymark" or any(not getattr(node, field) for field in required_node_fields)
+    ]
+    if invalid_node_metadata:
+        raise SystemExit(f"declared graph has invalid node metadata: {invalid_node_metadata}")
+
     for edge in scenario.observatory_edges:
         if edge.from_node not in node_ids or edge.to_node not in node_ids:
             raise SystemExit(f"declared graph has an edge endpoint outside its nodes: {edge}")
