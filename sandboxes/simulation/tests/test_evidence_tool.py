@@ -81,3 +81,10 @@ def test_graph_validator_checks_structural_beams():
     source = tool.read_text(encoding="utf-8")
     assert "invalid_structural_beams" in source
     assert 'edge.kind != "route"' in source
+
+
+def test_evidence_tool_requires_actor_intentions():
+    tool = Path("sandboxes/simulation/tools/run_first_slice.py")
+    source = tool.read_text(encoding="utf-8")
+    assert "actor_intentions" in source
+    assert "missing actor intentions" in source
