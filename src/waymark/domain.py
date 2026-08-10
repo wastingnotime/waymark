@@ -173,6 +173,8 @@ class WaymarkDomain:
             if (existing_payment.period_start, existing_payment.period_end) != (period_start, period_end):
                 raise DomainError("payment id already used with different details")
             return existing_payment
+        if any(isinstance(f, PaymentFailed) and f.payment_id == payment_id for f in self.facts):
+            raise DomainError("payment id already used with a different outcome")
         if any(
             period_start < entitlement.effective_until
             and entitlement.effective_from < period_end
@@ -192,6 +194,8 @@ class WaymarkDomain:
     def record_payment_failure(self, payment_id: str, recorded_at: datetime) -> PaymentFailed:
         self._require_aware(recorded_at)
         subscription = self._subscription()
+        if any(isinstance(f, PaymentSucceeded) and f.payment_id == payment_id for f in self.facts):
+            raise DomainError("payment id already used with a different outcome")
         if any(isinstance(f, PaymentFailed) and f.payment_id == payment_id for f in self.facts):
             return next(f for f in self.facts if isinstance(f, PaymentFailed) and f.payment_id == payment_id)
         failure = self._append(PaymentFailed(subscription.subscription_id, payment_id, recorded_at))
