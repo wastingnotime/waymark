@@ -38,3 +38,10 @@ def test_graph_validator_has_a_stable_entrypoint():
     assert "observatory_nodes" in source
     assert "observatory_edges" in source
     assert "declared graph" in source
+
+
+def test_graph_validator_checks_intention_sources():
+    tool = Path("sandboxes/simulation/tools/validate_graph.py")
+    source = tool.read_text(encoding="utf-8")
+    assert "intention_sources" in source
+    assert "missing_sources" in source
