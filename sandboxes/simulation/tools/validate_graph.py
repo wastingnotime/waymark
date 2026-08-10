@@ -36,6 +36,14 @@ def main() -> int:
         if edge.from_node not in node_ids or edge.to_node not in node_ids:
             raise SystemExit(f"declared graph has an edge endpoint outside its nodes: {edge}")
 
+    invalid_structural_beams = [
+        edge
+        for edge in scenario.observatory_edges
+        if edge.kind != "route" or not edge.label.strip()
+    ]
+    if invalid_structural_beams:
+        raise SystemExit(f"declared graph has invalid structural beams: {invalid_structural_beams}")
+
     mapped_targets = set().union(
         _GRAPH_TARGET_BY_OBSERVATION.values(),
         _GRAPH_TARGET_BY_SUBSCRIBER_ACTION.values(),
