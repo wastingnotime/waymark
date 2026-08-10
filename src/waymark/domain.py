@@ -318,6 +318,8 @@ class WaymarkDomain:
 
     @staticmethod
     def _require_body(body: str) -> None:
+        if not isinstance(body, str):
+            raise DomainError("entry body must be text")
         if not body.strip():
             raise DomainError("entry body must not be empty")
 
