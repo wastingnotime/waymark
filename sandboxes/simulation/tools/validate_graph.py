@@ -8,6 +8,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT / "sandboxes" / "simulation" / "src"))
 
 from app.simulation.mrl_runtime_scenario import (  # noqa: E402
+    _GRAPH_TARGET_BY_OBSERVATION,
     _GRAPH_TARGET_BY_EXPIRY_ACTION,
     _GRAPH_TARGET_BY_OPERATOR_ACTION,
     _GRAPH_TARGET_BY_PROVIDER_ACTION,
@@ -27,6 +28,7 @@ def main() -> int:
             raise SystemExit(f"declared graph has an edge endpoint outside its nodes: {edge}")
 
     mapped_targets = set().union(
+        _GRAPH_TARGET_BY_OBSERVATION.values(),
         _GRAPH_TARGET_BY_SUBSCRIBER_ACTION.values(),
         _GRAPH_TARGET_BY_PROVIDER_ACTION.values(),
         _GRAPH_TARGET_BY_OPERATOR_ACTION.values(),
@@ -35,6 +37,14 @@ def main() -> int:
     missing_targets = mapped_targets - node_ids
     if missing_targets:
         raise SystemExit(f"declared graph is missing mapped targets: {sorted(missing_targets)}")
+
+    observation_targets = set(_GRAPH_TARGET_BY_OBSERVATION.values())
+    if not observation_targets <= node_ids:
+        missing_observation_targets = observation_targets - node_ids
+        raise SystemExit(
+            "declared graph is missing observation targets: "
+            f"{sorted(missing_observation_targets)}"
+        )
 
     intention_sources = {"subscriber", "payment_provider", "operations", "access_control"}
     missing_sources = intention_sources - node_ids
