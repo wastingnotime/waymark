@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Union
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 class DomainError(ValueError):
@@ -258,14 +259,15 @@ class WaymarkDomain:
         self._require_aware(start, end)
         if end < start:
             raise DomainError("summary end must not precede start")
-        # The first slice accepts UTC; named timezone conversion belongs in the adapter.
-        if timezone_name != "UTC":
-            raise DomainError("only UTC summaries are supported in the first slice")
+        try:
+            local_zone = ZoneInfo(timezone_name)
+        except ZoneInfoNotFoundError as exc:
+            raise DomainError(f"unknown timezone: {timezone_name}") from exc
         counts: Counter[str] = Counter()
         for fact in self.facts:
             instant = getattr(fact, "recorded_at", None)
             if isinstance(fact, (NoteRecorded, LogEntryRecorded)) and start <= instant <= end:
-                counts[instant.date().isoformat()] += 1
+                counts[instant.astimezone(local_zone).date().isoformat()] += 1
         return dict(sorted(counts.items()))
 
     def _subscription(self) -> SubscriptionRequested:
