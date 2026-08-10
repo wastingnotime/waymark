@@ -164,8 +164,14 @@ class WaymarkDomain:
         subscription = self._subscription()
         if period_end <= period_start:
             raise DomainError("billing period must have a positive duration")
-        if any(isinstance(f, PaymentSucceeded) and f.payment_id == payment_id for f in self.facts):
-            return next(f for f in self.facts if isinstance(f, PaymentSucceeded) and f.payment_id == payment_id)
+        existing_payment = next(
+            (f for f in self.facts if isinstance(f, PaymentSucceeded) and f.payment_id == payment_id),
+            None,
+        )
+        if existing_payment:
+            if (existing_payment.period_start, existing_payment.period_end) != (period_start, period_end):
+                raise DomainError("payment id already used with different details")
+            return existing_payment
         if any(
             period_start < entitlement.effective_until
             and entitlement.effective_from < period_end
@@ -222,8 +228,11 @@ class WaymarkDomain:
         self._require_access(recorded_at)
         self._require_body(body)
         entry_id = entry_id or uuid4()
-        if any(getattr(f, "entry_id", None) == entry_id for f in self.facts):
-            return next(f for f in self.facts if getattr(f, "entry_id", None) == entry_id)
+        existing_entry = next((f for f in self.facts if getattr(f, "entry_id", None) == entry_id), None)
+        if existing_entry:
+            if not isinstance(existing_entry, NoteRecorded) or existing_entry.body != body:
+                raise DomainError("entry id already used with different details")
+            return existing_entry
         return self._append(NoteRecorded(entry_id, self._account().workspace_id, body, recorded_at))
 
     def record_log(self, body: str, happened_at: datetime, recorded_at: datetime, entry_id: UUID | None = None) -> LogEntryRecorded:
@@ -231,8 +240,15 @@ class WaymarkDomain:
         self._require_access(recorded_at)
         self._require_body(body)
         entry_id = entry_id or uuid4()
-        if any(getattr(f, "entry_id", None) == entry_id for f in self.facts):
-            return next(f for f in self.facts if getattr(f, "entry_id", None) == entry_id)
+        existing_entry = next((f for f in self.facts if getattr(f, "entry_id", None) == entry_id), None)
+        if existing_entry:
+            if (
+                not isinstance(existing_entry, LogEntryRecorded)
+                or existing_entry.body != body
+                or existing_entry.happened_at != happened_at
+            ):
+                raise DomainError("entry id already used with different details")
+            return existing_entry
         return self._append(LogEntryRecorded(entry_id, self._account().workspace_id, body, happened_at, recorded_at))
 
     def daily_summary(self, start: datetime, end: datetime, timezone_name: str = "UTC") -> dict[str, int]:
