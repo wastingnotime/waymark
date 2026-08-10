@@ -207,6 +207,12 @@ def test_entry_id_must_be_a_uuid_when_supplied():
         domain.record_note("entry", instant(2), "entry-1")
 
 
+def test_summary_timezone_name_must_not_be_empty():
+    domain = subscribed()
+    with pytest.raises(DomainError, match="timezone name must not be empty"):
+        domain.daily_summary(instant(1), instant(3), "  ")
+
+
 def test_account_creation_retry_is_idempotent_but_conflicting_identity_is_rejected():
     domain = WaymarkDomain()
     user_id, payer_id, workspace_id = uuid4(), uuid4(), uuid4()
