@@ -135,6 +135,11 @@ class WaymarkDomain:
         return tuple(self._facts)
 
     @property
+    def fact_count(self) -> int:
+        """Number of durable facts currently recorded."""
+        return len(self._facts)
+
+    @property
     def entries(self) -> tuple[NoteRecorded | LogEntryRecorded, ...]:
         """Recorded workspace entries, excluding billing and access facts."""
         return tuple(f for f in self._facts if isinstance(f, (NoteRecorded, LogEntryRecorded)))
