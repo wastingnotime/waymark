@@ -136,3 +136,9 @@ def test_subscription_request_retry_is_idempotent_but_new_id_is_rejected():
     assert domain.start_subscription(subscription_id, instant(2)) == first
     with pytest.raises(DomainError, match="current subscription already exists"):
         domain.start_subscription(uuid4(), instant(2))
+
+
+def test_payment_correlation_id_must_not_be_empty():
+    domain = subscribed()
+    with pytest.raises(DomainError, match="payment id must not be empty"):
+        domain.record_payment_failure("  ", instant(2))
