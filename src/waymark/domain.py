@@ -154,6 +154,8 @@ class WaymarkDomain:
 
     def start_subscription(self, subscription_id: UUID, requested_at: datetime) -> SubscriptionRequested:
         self._require_aware(requested_at)
+        if not isinstance(subscription_id, UUID):
+            raise DomainError("subscription id must be a UUID")
         account = self._account()
         existing = next((f for f in self.facts if isinstance(f, SubscriptionRequested)), None)
         if existing:
