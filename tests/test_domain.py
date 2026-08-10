@@ -72,3 +72,17 @@ def test_domain_rejects_naive_command_timestamps():
     domain = WaymarkDomain()
     with pytest.raises(DomainError, match="timezone-aware"):
         domain.create_account(uuid4(), uuid4(), uuid4(), datetime(2026, 9, 1))
+
+
+def test_reusing_payment_id_with_different_period_is_rejected():
+    domain = subscribed()
+    with pytest.raises(DomainError, match="payment id already used"):
+        domain.record_payment_success(instant(8), instant(15), "pay-1", instant(8))
+
+
+def test_reusing_entry_id_with_different_body_is_rejected():
+    domain = subscribed()
+    entry_id = uuid4()
+    domain.record_note("original", instant(2), entry_id)
+    with pytest.raises(DomainError, match="entry id already used"):
+        domain.record_note("changed", instant(2), entry_id)
