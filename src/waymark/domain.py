@@ -257,22 +257,18 @@ class WaymarkDomain:
 
     def record_note(self, body: str, recorded_at: datetime, entry_id: UUID | None = None) -> NoteRecorded:
         self._require_aware(recorded_at)
-        self._require_access(recorded_at)
-        self._require_body(body)
         entry_id = entry_id or uuid4()
         existing_entry = next((f for f in self.facts if getattr(f, "entry_id", None) == entry_id), None)
         if existing_entry:
             if not isinstance(existing_entry, NoteRecorded) or existing_entry.body != body:
                 raise DomainError("entry id already used with different details")
             return existing_entry
+        self._require_access(recorded_at)
+        self._require_body(body)
         return self._append(NoteRecorded(entry_id, self._account().workspace_id, body, recorded_at))
 
     def record_log(self, body: str, happened_at: datetime, recorded_at: datetime, entry_id: UUID | None = None) -> LogEntryRecorded:
         self._require_aware(happened_at, recorded_at)
-        if recorded_at < happened_at:
-            raise DomainError("recorded_at must not precede happened_at")
-        self._require_access(recorded_at)
-        self._require_body(body)
         entry_id = entry_id or uuid4()
         existing_entry = next((f for f in self.facts if getattr(f, "entry_id", None) == entry_id), None)
         if existing_entry:
@@ -283,6 +279,10 @@ class WaymarkDomain:
             ):
                 raise DomainError("entry id already used with different details")
             return existing_entry
+        if recorded_at < happened_at:
+            raise DomainError("recorded_at must not precede happened_at")
+        self._require_access(recorded_at)
+        self._require_body(body)
         return self._append(LogEntryRecorded(entry_id, self._account().workspace_id, body, happened_at, recorded_at))
 
     def daily_summary(self, start: datetime, end: datetime, timezone_name: str = "UTC") -> dict[str, int]:
