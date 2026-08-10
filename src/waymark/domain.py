@@ -210,6 +210,8 @@ class WaymarkDomain:
             return existing_payment
         if any(isinstance(f, PaymentFailed) and f.payment_id == payment_id for f in self.facts):
             raise DomainError("payment id already used with a different outcome")
+        if self._cancellation_at() is not None:
+            raise DomainError("subscription is cancelled")
         if any(
             period_start < entitlement.effective_until
             and entitlement.effective_from < period_end
