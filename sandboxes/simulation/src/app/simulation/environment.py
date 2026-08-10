@@ -241,17 +241,26 @@ class WaymarkSimulation:
         context.emit("access_changed", "workspace_restricted", source="Access", payload={"reason": "expired"})
 
     def access_check(self, context: object, user_id: str | None = None) -> bool:
-        if user_id is not None and user_id != self.state.user_id:
-            context.emit("access_decision", "workspace_access_checked", source="Access", payload={"allowed": False, "reason": "unauthorized_user"})
-            return False
-        allowed = self.state.access_allowed(context.clock.now())
+        decision = self.access_decision(context.clock.now(), user_id=user_id)
         context.emit(
             "access_decision",
             "workspace_access_checked",
             source="Access",
-            payload={"allowed": allowed, "reason": "entitled" if allowed else self._restriction_reason()},
+            payload=decision,
         )
-        return allowed
+        return bool(decision["allowed"])
+
+    def access_decision(self, at: datetime, user_id: str | None = None) -> dict[str, object]:
+        """Return the explainable access read model for a point in time."""
+        status = self.subscription_status(at)
+        if user_id is not None and user_id != self.state.user_id:
+            return {"allowed": False, "reason": "unauthorized_user", "subscription_status": status}
+        allowed = self.state.access_allowed(at)
+        return {
+            "allowed": allowed,
+            "reason": "entitled" if allowed else self._restriction_reason(),
+            "subscription_status": status,
+        }
 
     def operator_inspect(self, context: object, actor: str) -> dict[str, object]:
         if not actor.strip():

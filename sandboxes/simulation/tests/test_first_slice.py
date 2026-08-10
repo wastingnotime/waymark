@@ -112,6 +112,32 @@ def test_operator_can_inspect_and_restore_a_suspended_entitlement():
     assert inspection["event_count"] == 6
     assert inspection["subscription_status"] == "past_due"
     assert len(simulation.state.events) == event_count
+
+
+def test_access_decision_explains_subscription_status():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, start + timedelta(days=7))
+    simulation.fail_payment(context)
+
+    assert simulation.access_decision(start) == {
+        "allowed": False,
+        "reason": "payment_failed",
+        "subscription_status": "past_due",
+    }
+    assert simulation.access_decision(start, user_id="other-user") == {
+        "allowed": False,
+        "reason": "unauthorized_user",
+        "subscription_status": "past_due",
+    }
+    assert not simulation.access_check(context)
+    assert context.events[-1][1]["payload"] == {
+        "allowed": False,
+        "reason": "payment_failed",
+        "subscription_status": "past_due",
+    }
     assert simulation.operator_restore(context, "support-operator", "verified payment manually")
     assert simulation.access_check(context)
     assert simulation.state.facts.count("OperatorInterventionRecorded") == 1
