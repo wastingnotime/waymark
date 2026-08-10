@@ -291,6 +291,8 @@ class WaymarkDomain:
         self._require_aware(start, end)
         if end < start:
             raise DomainError("summary end must not precede start")
+        if not isinstance(timezone_name, str):
+            raise DomainError("timezone name must be text")
         try:
             local_zone = ZoneInfo(timezone_name)
         except ZoneInfoNotFoundError as exc:
