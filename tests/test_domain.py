@@ -126,3 +126,13 @@ def test_expired_entitlement_reports_expired_access_reason():
     domain = subscribed()
     domain.expire_entitlements(instant(8))
     assert domain.access_at(instant(8)).reason == "expired"
+
+
+def test_subscription_request_retry_is_idempotent_but_new_id_is_rejected():
+    domain = WaymarkDomain()
+    domain.create_account(uuid4(), uuid4(), uuid4(), instant(1))
+    subscription_id = uuid4()
+    first = domain.start_subscription(subscription_id, instant(1))
+    assert domain.start_subscription(subscription_id, instant(2)) == first
+    with pytest.raises(DomainError, match="current subscription already exists"):
+        domain.start_subscription(uuid4(), instant(2))
