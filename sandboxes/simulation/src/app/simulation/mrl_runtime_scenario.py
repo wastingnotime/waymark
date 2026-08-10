@@ -4,7 +4,12 @@ from datetime import datetime, timedelta, timezone
 
 from mrl_simulation_runtime.actors import Actor
 from mrl_simulation_runtime.invariants import Invariant
-from mrl_simulation_runtime.scenario import InitialScheduledAction, Scenario
+from mrl_simulation_runtime.scenario import (
+    InitialScheduledAction,
+    ObservatoryEdge,
+    ObservatoryNode,
+    Scenario,
+)
 
 from app.simulation.environment import SUMMARY_CALCULATION_VERSION, WaymarkSimulation
 from app.simulation.ports import FakePaymentProvider
@@ -339,5 +344,38 @@ def create_simulation() -> Scenario:
             Invariant("subscription_ownership_is_explicit", subscription_ownership_is_explicit),
             Invariant("cancellation_request_is_unique", cancellation_request_is_unique),
             Invariant("expiry_job_is_unique", expiry_job_is_unique),
+        ],
+        observatory_nodes=[
+            ObservatoryNode("subscriber", "Subscriber", "actor", "actors", realm="waymark", domain="Workspace", status="active"),
+            ObservatoryNode("payment_provider", "Payment Provider", "external_provider", "external_providers", realm="waymark", domain="Billing"),
+            ObservatoryNode("account_bootstrap", "Account Bootstrap", "use_case", "use_cases", realm="waymark", domain="Workspace"),
+            ObservatoryNode("subscription_lifecycle", "Subscription Lifecycle", "use_case", "use_cases", realm="waymark", domain="Billing"),
+            ObservatoryNode("payment_processing", "Payment Processing", "use_case", "use_cases", realm="waymark", domain="Billing"),
+            ObservatoryNode("access_control", "Access Control", "use_case", "use_cases", realm="waymark", domain="Access"),
+            ObservatoryNode("recording", "Recording", "use_case", "use_cases", realm="waymark", domain="Recording"),
+            ObservatoryNode("insights", "Daily Insights", "use_case", "use_cases", realm="waymark", domain="Insights"),
+            ObservatoryNode("operations", "Operator Operations", "use_case", "use_cases", realm="waymark", domain="Operations"),
+            ObservatoryNode("fact_history", "Append-only Fact History", "event_store", "domain_model", realm="waymark", domain="Shared"),
+            ObservatoryNode("entitlement", "Entitlement Projection", "projection", "projections", realm="waymark", domain="Access"),
+            ObservatoryNode("summary", "Summary Projection", "projection", "projections", realm="waymark", domain="Insights"),
+        ],
+        observatory_edges=[
+            ObservatoryEdge("subscriber", "account_bootstrap", "creates account", kind="route"),
+            ObservatoryEdge("account_bootstrap", "fact_history", "records account facts", kind="route"),
+            ObservatoryEdge("subscriber", "subscription_lifecycle", "requests subscription", kind="route"),
+            ObservatoryEdge("subscription_lifecycle", "fact_history", "records subscription facts", kind="route"),
+            ObservatoryEdge("payment_provider", "payment_processing", "delivers payment outcome", kind="route"),
+            ObservatoryEdge("payment_processing", "entitlement", "grants or suspends access", kind="route"),
+            ObservatoryEdge("payment_processing", "fact_history", "records payment facts", kind="route"),
+            ObservatoryEdge("entitlement", "access_control", "answers access decision", kind="route"),
+            ObservatoryEdge("access_control", "recording", "permits or rejects writes", kind="route"),
+            ObservatoryEdge("subscriber", "recording", "records note or log", kind="route"),
+            ObservatoryEdge("recording", "fact_history", "records entry fact", kind="route"),
+            ObservatoryEdge("fact_history", "summary", "feeds daily projection", kind="route"),
+            ObservatoryEdge("subscriber", "insights", "requests summary", kind="route"),
+            ObservatoryEdge("insights", "summary", "calculates daily counts", kind="route"),
+            ObservatoryEdge("operations", "access_control", "inspects access", kind="route"),
+            ObservatoryEdge("operations", "entitlement", "restores entitlement", kind="route"),
+            ObservatoryEdge("entitlement", "fact_history", "records lifecycle fact", kind="route"),
         ],
     )
