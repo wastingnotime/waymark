@@ -36,6 +36,11 @@ def main() -> int:
     if missing_targets:
         raise SystemExit(f"declared graph is missing mapped targets: {sorted(missing_targets)}")
 
+    intention_sources = {"subscriber", "payment_provider", "operations", "access_control"}
+    missing_sources = intention_sources - node_ids
+    if missing_sources:
+        raise SystemExit(f"declared graph is missing intention sources: {sorted(missing_sources)}")
+
     print(
         f"declared graph valid: {len(scenario.observatory_nodes)} nodes, "
         f"{len(scenario.observatory_edges)} edges"
