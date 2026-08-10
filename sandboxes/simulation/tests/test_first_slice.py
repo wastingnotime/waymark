@@ -396,6 +396,11 @@ def test_subscription_status_is_derived():
     assert simulation.subscription_status(start) == "active"
     simulation.fail_payment(context, "payment-1")
     assert simulation.subscription_status(start) == "past_due"
+    simulation.recover_payment(context)
+    simulation.cancel(context)
+    assert simulation.subscription_status(start) == "cancellation_scheduled"
+    simulation.expire(context)
+    assert simulation.subscription_status(start) == "expired"
 
 
 def test_subscription_request_is_idempotent():
