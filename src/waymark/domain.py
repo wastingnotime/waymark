@@ -227,6 +227,8 @@ class WaymarkDomain:
             return AccessDecision(False, "no_entitlement", at)
         entitlement = self._current_entitlement(at)
         if entitlement is None:
+            if any(e.expired and e.effective_until <= at for e in self._entitlements()):
+                return AccessDecision(False, "expired", at)
             return AccessDecision(False, "no_entitlement", at)
         if entitlement.suspended:
             return AccessDecision(False, "payment_failed", at)
