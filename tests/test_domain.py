@@ -154,3 +154,10 @@ def test_cancellation_cannot_be_scheduled_in_the_past():
     domain = subscribed()
     with pytest.raises(DomainError, match="effective_at must not precede recorded_at"):
         domain.cancel_subscription(instant(1), instant(2))
+
+
+def test_expiry_processing_reports_only_new_expirations():
+    domain = subscribed()
+    assert domain.expire_entitlements(instant(8)) == 1
+    assert domain.expire_entitlements(instant(9)) == 0
+    assert len([fact for fact in domain.facts if fact.__class__.__name__ == "EntitlementExpired"]) == 1
