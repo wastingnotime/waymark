@@ -178,3 +178,9 @@ def test_cancellation_requires_a_paid_entitlement():
     domain.start_subscription(uuid4(), instant(1))
     with pytest.raises(DomainError, match="active paid entitlement"):
         domain.cancel_subscription(instant(2), instant(2))
+
+
+def test_cancellation_retry_remains_idempotent_after_effective_time():
+    domain = subscribed()
+    first = domain.cancel_subscription(instant(4), instant(2))
+    assert domain.cancel_subscription(instant(4), instant(5)) == first
