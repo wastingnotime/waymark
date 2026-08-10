@@ -68,6 +68,20 @@ def main() -> int:
     if missing_sources:
         raise SystemExit(f"declared graph is missing intention sources: {sorted(missing_sources)}")
 
+    actor_graph_nodes = {
+        "subscriber": "subscriber",
+        "payment_provider": "payment_provider",
+        "support_operator": "operations",
+        "expiry_scheduler": "access_control",
+    }
+    missing_actor_nodes = {
+        actor_graph_nodes[actor.name]
+        for actor in scenario.actors
+        if actor.name in actor_graph_nodes and actor_graph_nodes[actor.name] not in node_ids
+    }
+    if missing_actor_nodes:
+        raise SystemExit(f"declared graph is missing runtime actor nodes: {sorted(missing_actor_nodes)}")
+
     print(
         f"declared graph valid: {len(scenario.observatory_nodes)} nodes, "
         f"{len(scenario.observatory_edges)} edges"
