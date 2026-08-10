@@ -170,3 +170,11 @@ def test_account_creation_retry_is_idempotent_but_conflicting_identity_is_reject
     assert domain.create_account(user_id, payer_id, workspace_id, instant(2)) == first
     with pytest.raises(DomainError, match="account already exists"):
         domain.create_account(uuid4(), payer_id, workspace_id, instant(2))
+
+
+def test_cancellation_requires_a_paid_entitlement():
+    domain = WaymarkDomain()
+    domain.create_account(uuid4(), uuid4(), uuid4(), instant(1))
+    domain.start_subscription(uuid4(), instant(1))
+    with pytest.raises(DomainError, match="active paid entitlement"):
+        domain.cancel_subscription(instant(2), instant(2))
