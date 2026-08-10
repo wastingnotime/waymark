@@ -74,3 +74,10 @@ def test_graph_validator_checks_node_metadata():
     source = tool.read_text(encoding="utf-8")
     assert "required_node_fields" in source
     assert "invalid_node_metadata" in source
+
+
+def test_graph_validator_checks_structural_beams():
+    tool = Path("sandboxes/simulation/tools/validate_graph.py")
+    source = tool.read_text(encoding="utf-8")
+    assert "invalid_structural_beams" in source
+    assert 'edge.kind != "route"' in source
