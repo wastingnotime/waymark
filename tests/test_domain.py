@@ -91,7 +91,7 @@ def test_reusing_entry_id_with_different_body_is_rejected():
 def test_cancellation_restricts_access_at_its_effective_boundary():
     domain = subscribed()
     domain.cancel_subscription(instant(4), instant(2))
-    assert domain.access_at(instant(4)).reason == "no_entitlement"
+    assert domain.access_at(instant(4)).reason == "cancelled"
     assert domain.access_at(instant(3)).allowed
 
 
@@ -240,6 +240,12 @@ def test_payment_failure_cannot_precede_subscription_request():
     domain.start_subscription(uuid4(), instant(2))
     with pytest.raises(DomainError, match="payment cannot precede subscription request"):
         domain.record_payment_failure("early-failure", instant(1))
+
+
+def test_access_decision_explains_cancellation_at_effective_boundary():
+    domain = subscribed()
+    domain.cancel_subscription(instant(4), instant(2))
+    assert domain.access_at(instant(4)).reason == "cancelled"
 
 
 def test_entries_projection_is_read_only_and_excludes_billing_facts():
