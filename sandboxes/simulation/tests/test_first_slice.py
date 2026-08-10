@@ -69,6 +69,51 @@ def test_cancellation_keeps_access_until_period_end():
     assert simulation.state.cancellation_at == end
 
 
+def test_cancellation_can_have_an_explicit_boundary_and_explains_restriction():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    end = start + timedelta(days=7)
+    cancellation_at = start + timedelta(days=4)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, end)
+    simulation.cancel(context, cancellation_at)
+    context.clock = type("Clock", (), {"now": lambda _: cancellation_at - timedelta(seconds=1)})()
+    assert simulation.access_decision(context.clock.now())["allowed"]
+    context.clock = type("Clock", (), {"now": lambda _: cancellation_at})()
+    assert simulation.access_decision(context.clock.now()) == {
+        "allowed": False,
+        "reason": "cancelled",
+        "subscription_status": "cancellation_scheduled",
+    }
+
+
+def test_cancellation_boundary_must_be_forward_and_inside_paid_period():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    end = start + timedelta(days=7)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, end)
+    with pytest.raises(ValueError, match="retroactive"):
+        simulation.cancel(context, start - timedelta(seconds=1))
+    with pytest.raises(ValueError, match="within the paid period"):
+        simulation.cancel(context, end + timedelta(seconds=1))
+
+
+def test_replay_preserves_an_explicit_cancellation_boundary():
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    end = start + timedelta(days=7)
+    cancellation_at = start + timedelta(days=4)
+    context = Context(start)
+    simulation = WaymarkSimulation()
+    simulation.create_account(context)
+    simulation.activate_period(context, start, end)
+    simulation.cancel(context, cancellation_at)
+    replayed = WaymarkSimulation.replay(simulation.state.events)
+    assert replayed.state.cancellation_at == cancellation_at
+
+
 def test_entries_require_non_empty_bodies():
     start = datetime(2026, 9, 1, tzinfo=timezone.utc)
     context = Context(start)

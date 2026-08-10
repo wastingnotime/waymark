@@ -69,6 +69,9 @@ entitlement, access decision, and daily metric summary.
     payer identities.
 30. Subscription status is a derived read model, not an independent mutable
     flag.
+31. Cancellation may carry an explicit effective boundary within the current
+    paid period; access is allowed before it and restricted with reason
+    `cancelled` at or after it.
 
 ## Open questions
 
@@ -143,3 +146,6 @@ The subscription ownership slice is documented in
 
 The subscription status slice is documented in
 `docs/slices/subscription-status.md`.
+
+The cancellation boundary slice is documented in
+`docs/slices/cancellation-boundary.md`.

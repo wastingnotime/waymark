@@ -7,6 +7,8 @@ become authoritative.
 The simulation is one evolving deterministic environment. It currently covers
 the first subscription-backed workspace slice: activation, recording, payment
 failure, recovery, and access expiry.
+The cancellation edge also supports an explicit effective boundary and an
+explainable `cancelled` access decision.
 
 Run the pure simulation tests from the repository root:
 

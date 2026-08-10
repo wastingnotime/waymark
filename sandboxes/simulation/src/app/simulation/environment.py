@@ -48,6 +48,7 @@ class SimState:
             self.period_start is not None
             and self.period_end is not None
             and self.period_start <= at < self.period_end
+            and (self.cancellation_at is None or at < self.cancellation_at)
             and not self.payment_failed
             and not self.expired
         )
@@ -215,14 +216,19 @@ class WaymarkSimulation:
         context.emit("domain_fact", "payment_recovered", source="PaymentProvider")
         context.emit("access_changed", "workspace_allowed", source="Access", payload={"reason": "recovered"})
 
-    def cancel(self, context: object) -> None:
+    def cancel(self, context: object, effective_at: datetime | None = None) -> None:
         if self.state.period_end is None:
             raise ValueError("cannot cancel without an active paid period")
         if self.state.cancelled:
             context.emit("subscription_notice", "duplicate_cancellation_ignored", source="Billing")
             return
+        effective_at = effective_at or self.state.period_end
+        if effective_at < context.clock.now():
+            raise ValueError("cancellation cannot be retroactive")
+        if self.state.period_start is None or not self.state.period_start <= effective_at <= self.state.period_end:
+            raise ValueError("cancellation must fall within the paid period")
         self.state.cancelled = True
-        self.state.cancellation_at = self.state.period_end
+        self.state.cancellation_at = effective_at
         self._fact("CancellationScheduled", context.clock.now(), effective_at=self.state.cancellation_at)
         context.emit(
             "domain_fact",
@@ -383,4 +389,6 @@ class WaymarkSimulation:
             return "expired"
         if self.state.payment_failed:
             return "payment_failed"
+        if self.state.cancelled and self.state.cancellation_at is not None:
+            return "cancelled"
         return "no_entitlement"
