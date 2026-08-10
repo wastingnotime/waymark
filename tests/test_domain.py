@@ -120,3 +120,9 @@ def test_cancellation_retry_is_idempotent_but_conflicting_retry_is_rejected():
     assert domain.cancel_subscription(instant(7), instant(3)) == first
     with pytest.raises(DomainError, match="cancellation already scheduled"):
         domain.cancel_subscription(instant(6), instant(3))
+
+
+def test_expired_entitlement_reports_expired_access_reason():
+    domain = subscribed()
+    domain.expire_entitlements(instant(8))
+    assert domain.access_at(instant(8)).reason == "expired"
