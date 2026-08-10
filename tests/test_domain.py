@@ -106,3 +106,9 @@ def test_daily_summary_rejects_unknown_timezone():
     domain = subscribed()
     with pytest.raises(DomainError, match="unknown timezone"):
         domain.daily_summary(instant(1), instant(3), "Mars/Olympus")
+
+
+def test_payment_id_cannot_be_reused_across_success_and_failure():
+    domain = subscribed()
+    with pytest.raises(DomainError, match="payment id already used"):
+        domain.record_payment_failure("pay-1", instant(2))
