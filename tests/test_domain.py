@@ -234,6 +234,14 @@ def test_fact_history_cannot_be_mutated_through_public_view():
         domain.facts.append(domain.facts[0])
 
 
+def test_payment_failure_cannot_precede_subscription_request():
+    domain = WaymarkDomain()
+    domain.create_account(uuid4(), uuid4(), uuid4(), instant(2))
+    domain.start_subscription(uuid4(), instant(2))
+    with pytest.raises(DomainError, match="payment cannot precede subscription request"):
+        domain.record_payment_failure("early-failure", instant(1))
+
+
 def test_entries_projection_is_read_only_and_excludes_billing_facts():
     domain = subscribed()
     note = domain.record_note("visible", instant(2))
