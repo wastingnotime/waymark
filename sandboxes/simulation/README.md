@@ -1,5 +1,8 @@
 # Waymark Simulation
 
+Historical reference: Waymark was retired on 2026-10-13. See the
+[retirement record](https://github.com/wastingnotime/waymark/blob/main/docs/decommission.md).
+
 This is Waymark's MRL simulation project. It is the place where the product
 model is extracted, mapped, refined, and released before technology adapters
 become authoritative.
