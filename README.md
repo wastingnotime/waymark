@@ -1,5 +1,14 @@
 # Waymark
 
+## Retirement
+
+Retired at the owner's request on 2026-10-13 and preserved as an archived
+reference. Active development has stopped. The provisional domain model,
+Python source, deterministic simulation, tests, and run evidence are preserved.
+See the [retirement record](https://github.com/wastingnotime/waymark/blob/main/docs/decommission.md).
+
+## Historical Purpose
+
 Waymark is a quiet, private workspace for recording what happens and seeing
 what emerges over time.
 
